@@ -109,23 +109,27 @@ while true; do
         echo "✅ Running Claude command in Warp"
       else
         # Just open interactive Claude — auto-accept trust
-        osascript -e '
+        # Open Warp, start Claude, then keep pressing Enter to get past prompts
+        osascript <<'APPLESCRIPT'
           tell application "Warp" to activate
           delay 0.5
           tell application "System Events"
             tell process "Warp"
               keystroke "t" using command down
               delay 0.5
-              keystroke "yes | claude --dangerously-skip-permissions"
+              keystroke "claude --dangerously-skip-permissions"
               delay 0.2
               key code 36
-              delay 6
+              -- Wait for Claude to load and show trust prompt
+              delay 4
               key code 36
-              delay 2
+              delay 1
+              key code 36
+              delay 1
               key code 36
             end tell
           end tell
-        '
+APPLESCRIPT
         update_status "$ID" "done" "Opened Claude in Warp (auto-trusted + permissions skipped)"
         echo "✅ Claude opened in Warp (auto-trusted)"
       fi
