@@ -5,6 +5,10 @@
 SB_URL="https://nibemnomfzflvpnlfgbh.supabase.co"
 SB_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5pYmVtbm9tZnpmbHZwbmxmZ2JoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQyOTMzNzYsImV4cCI6MjA4OTg2OTM3Nn0.0gQPv67Bh5Fh1PocqENfPCm-dWQDe41886VfLUgQhuM"
 POLL_SEC=8
+SHARED_SECRET="navi_2024_xk9m"
+
+# Auto-restart on crash
+trap 'echo "⚠️  Listener crashed, restarting in 3s..."; sleep 3; exec bash "$0"' ERR
 
 update_status() {
   local id="$1" status="$2" result="$3"
@@ -39,7 +43,16 @@ while true; do
   if [ -n "$ID" ]; then
     CMD=$(echo "$ROW" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d[0]['command'])" 2>/dev/null)
     PROJ=$(echo "$ROW" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d[0].get('project','general'))" 2>/dev/null)
+    SECRET=$(echo "$ROW" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d[0].get('secret',''))" 2>/dev/null)
     CMD_LOWER=$(echo "$CMD" | tr '[:upper:]' '[:lower:]')
+
+    # Shared secret check — reject commands without valid secret
+    if [ "$SECRET" != "$SHARED_SECRET" ]; then
+      echo "🚫 Rejected command (invalid secret): $CMD"
+      update_status "$ID" "error" "Rejected: invalid shared secret"
+      sleep $POLL_SEC
+      continue
+    fi
 
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     echo "📥 Command: $CMD"
@@ -57,17 +70,18 @@ while true; do
     # TYPE INTO ACTIVE CLAUDE SESSION — prefix with ">" or "type:" or "send:"
     if echo "$CMD_LOWER" | grep -qE "^(>|type:|type |send:|send )"; then
       MSG=$(echo "$CMD" | sed -E 's/^(>|type:|type |send:|send )[[:space:]]*//')
-      osascript -e "
-        tell application \"Warp\" to activate
+      echo -n "$MSG" | pbcopy
+      osascript -e '
+        tell application "Warp" to activate
         delay 0.3
-        tell application \"System Events\"
-          tell process \"Warp\"
-            keystroke \"$MSG\"
+        tell application "System Events"
+          tell process "Warp"
+            keystroke "v" using command down
             delay 0.2
             key code 36
           end tell
         end tell
-      "
+      '
       update_status "$ID" "done" "Typed into Claude: $MSG"
       echo "✅ Typed into active Claude session: $MSG"
 
@@ -109,24 +123,26 @@ while true; do
       MSG=$(echo "$CMD" | sed -E 's/.*(new claude|start claude|open claude|claude chat|new chat)[[:space:]]*//' | sed 's/^[[:space:]]*//')
       if [ -n "$MSG" ] && [ "$MSG" != "$CMD" ]; then
         # Has a follow-up message — run it headless and show in Warp
-        osascript -e "
-          tell application \"Warp\" to activate
+        echo -n "claude -p \"${MSG}\"" | pbcopy
+        osascript -e '
+          tell application "Warp" to activate
           delay 0.3
-          tell application \"System Events\"
-            tell process \"Warp\"
-              keystroke \"t\" using command down
+          tell application "System Events"
+            tell process "Warp"
+              keystroke "t" using command down
               delay 0.3
-              keystroke \"claude -p \\\"${MSG}\\\"\"
+              keystroke "v" using command down
               delay 0.2
               key code 36
             end tell
           end tell
-        "
+        '
         update_status "$ID" "done" "Running Claude in Warp: $MSG"
         echo "✅ Running Claude command in Warp"
       else
         # Just open interactive Claude — auto-accept trust
         # Open Warp, start Claude, auto-accept both prompts
+        echo -n "claude --dangerously-skip-permissions" | pbcopy
         osascript <<'APPLESCRIPT'
           tell application "Warp" to activate
           delay 0.5
@@ -134,7 +150,7 @@ while true; do
             tell process "Warp"
               keystroke "t" using command down
               delay 0.5
-              keystroke "claude --dangerously-skip-permissions"
+              keystroke "v" using command down
               delay 0.2
               key code 36
               -- Prompt 1: "Yes, I trust this folder" (already selected) → Enter
