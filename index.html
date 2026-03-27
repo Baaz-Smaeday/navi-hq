@@ -140,20 +140,21 @@ header{padding:26px 20px 18px;border-bottom:1px solid #1a1a1a;display:flex;align
         <option value="general">All Projects</option>
         <option value="complyfleet">ComplyFleet</option>
         <option value="desimind">DesiMind</option>
-        <option value="sivo">SIVO</option>
+        <option value="sivohome">SIVO Home</option>
+        <option value="xeagle-booking">XEagle Booking</option>
         <option value="uk-theory-test">UK Theory Test</option>
-        <option value="loadlink">LoadLink</option>
-        <option value="eagle-academy">Eagle Academy</option>
-        <option value="loadboard">LoadBoard</option>
+        <option value="LoadLink">LoadLink</option>
+        <option value="eagle-academy-platform">Eagle Academy</option>
+        <option value="sivo-app">SIVO App</option>
+        <option value="dispatch-course">Dispatch Course</option>
+        <option value="letifi">Letifi</option>
+        <option value="garagealert">GarageAlert</option>
+        <option value="accuportal-backend">AccuPortal</option>
+        <option value="uk-cartheory-classroom">Car Theory Classroom</option>
       </select>
-      <button class="cmd-send" id="cmd-go" onclick="sendCustomCmd()">Send</button>
+      <button class="cmd-send" id="cmd-go" onclick="sendCustomCmd()">Open in Claude</button>
     </div>
     <div class="cmd-log" id="cmd-log"></div>
-  </div>
-  <div class="cmd-setup" id="cmd-setup">
-    <label>GitHub Token (stored locally on this device only)</label>
-    <input type="password" id="gh-token" placeholder="ghp_xxxx or github_pat_xxxx" oninput="saveToken(this.value)"/>
-    <div class="hint">Fine-grained PAT with Actions:write on baaz-smaeday/navi-hq. Never leaves your phone.</div>
   </div>
   <button class="btn-lk" onclick="doLock()">⎋ Lock</button>
   <div class="ticker" id="ticker">Initialising...</div>
@@ -161,13 +162,22 @@ header{padding:26px 20px 18px;border-bottom:1px solid #1a1a1a;display:flex;align
 <script>
 const PIN='2578',SK='nhq_ok';
 const P=[
-  {name:'ComplyFleet',   url:'https://complyfleet.co.uk',                     label:'complyfleet.co.uk', tags:['Next.js','Supabase'],hot:'Add Stripe',   type:'live'},
-  {name:'DesiMind',      url:'https://desimind.co.uk',                        label:'desimind.co.uk',    tags:['Next.js','Supabase'],hot:'Shopify token',type:'live'},
-  {name:'SIVO',          url:'https://sivohome.com',                          label:'sivohome.com',      tags:['Next.js'],           hot:null,           type:'live'},
-  {name:'UK Theory Test',url:'https://baaz-smaeday.github.io/uk-theory-test', label:'GitHub Pages',      tags:['HTML/JS'],           hot:null,           type:'live'},
-  {name:'LoadLink',      url:null,                                            label:'Not deployed yet',  tags:['React Native'],      hot:null,           type:'proto'},
-  {name:'Eagle Academy', url:null,                                            label:'Not deployed yet',  tags:['React/JS'],          hot:'Deploy needed',type:'proto'},
-  {name:'LoadBoard',     url:null,                                            label:'Not deployed yet',  tags:['React'],             hot:null,           type:'proto'},
+  /* ── Live ── */
+  {name:'ComplyFleet',       url:'https://complyfleet.co.uk',                     repo:'complyfleet',                  label:'complyfleet.co.uk',   tags:['Next.js','Supabase'],hot:'Add Stripe',   type:'live'},
+  {name:'DesiMind',          url:'https://desimind.co.uk',                        repo:'desimind',                     label:'desimind.co.uk',      tags:['Next.js','Supabase'],hot:'Shopify token',type:'live'},
+  {name:'SIVO Home',         url:'https://sivohome.com',                          repo:'sivohome',                     label:'sivohome.com',        tags:['Next.js'],           hot:null,           type:'live'},
+  {name:'UK Theory Test',    url:'https://baaz-smaeday.github.io/uk-theory-test', repo:'eagle-uk-theory-test-platform',label:'GitHub Pages',        tags:['HTML/JS'],           hot:null,           type:'live'},
+  {name:'Navi HQ',           url:'https://baaz-smaeday.github.io/navi-hq/',      repo:'navi-hq',                      label:'GitHub Pages',        tags:['Dashboard'],         hot:null,           type:'live'},
+  /* ── Building ── */
+  {name:'XEagle Booking',    url:null, repo:'xeagle-booking',             label:'Courier platform',     tags:['Next.js','Supabase'],hot:null,           type:'proto'},
+  {name:'LoadLink',          url:null, repo:'LoadLink',                   label:'In development',       tags:['React Native'],      hot:null,           type:'proto'},
+  {name:'Eagle Academy',     url:null, repo:'eagle-academy-platform',     label:'In development',       tags:['React/JS'],          hot:'Deploy needed',type:'proto'},
+  {name:'SIVO App',          url:null, repo:'sivo-app',                   label:'In development',       tags:['App'],               hot:null,           type:'proto'},
+  {name:'Dispatch Course',   url:null, repo:'dispatch-course',            label:'In development',       tags:['Course'],            hot:null,           type:'proto'},
+  {name:'Car Theory Class',  url:null, repo:'uk-cartheory-classroom',     label:'Training platform',    tags:['HTML/JS'],           hot:null,           type:'proto'},
+  {name:'Letifi',            url:null, repo:'letifi',                     label:'In development',       tags:['App'],               hot:null,           type:'proto'},
+  {name:'GarageAlert',       url:null, repo:'garagealert',                label:'In development',       tags:['App'],               hot:null,           type:'proto'},
+  {name:'AccuPortal',        url:null, repo:'accuportal-backend',         label:'Backend API',          tags:['Backend'],           hot:null,           type:'proto'},
 ];
 function tryUnlock(){
   if(document.getElementById('pin').value===PIN){
@@ -193,8 +203,8 @@ function render(){
   const list=document.getElementById('list');
   list.innerHTML='';
   P.forEach((p,i)=>{
-    const el=document.createElement(p.url?'a':'div');
-    if(p.url){el.href=p.url;el.target='_blank';}
+    const el=document.createElement('a');
+    el.href=p.url||('https://github.com/Baaz-Smaeday/'+p.repo);el.target='_blank';
     el.className='card '+(p.type==='proto'?'proto':'checking');
     el.id='c'+i;
     el.innerHTML=`<div class="dot"></div><div class="cinfo"><div class="cname">${p.name}</div><div class="curl">${p.label}</div><div class="ctags">${p.tags.map(t=>`<span class="tag">${t}</span>`).join('')}${p.hot?`<span class="tag hot">${p.hot}</span>`:''}</div></div><div class="cmeta"><div class="cstatus" id="s${i}">${p.type==='proto'?'building':'checking'}</div><div class="ctime" id="t${i}">${p.type==='proto'?'local only':'...'}</div></div>`;
@@ -229,11 +239,8 @@ async function checkAll(){
   document.getElementById('clock').textContent=now.toLocaleTimeString('en-GB');
   document.getElementById('ticker').textContent=`${on}/${live.length} responding · ${now.toLocaleDateString('en-GB')}`;
 }
-/* === Command Centre === */
-const GH_OWNER='Baaz-Smaeday',GH_REPO='navi-hq',TK_KEY='nhq_gh_token';
-function saveToken(v){localStorage.setItem(TK_KEY,v.trim())}
-function getToken(){return localStorage.getItem(TK_KEY)||''}
-function initToken(){const t=getToken();if(t)document.getElementById('gh-token').value=t;}
+/* === Command Centre — opens claude.ai/code (free with Max plan) === */
+const CLAUDE_URL='https://claude.ai/code';
 function cmdLog(msg,cls){
   const log=document.getElementById('cmd-log');
   log.classList.add('active');
@@ -242,45 +249,21 @@ function cmdLog(msg,cls){
   d.innerHTML=`<span style="color:#333">${now}</span> ${msg}`;
   log.prepend(d);
 }
-async function triggerWorkflow(command,project){
-  const token=getToken();
-  if(!token){cmdLog('Set GitHub token first','fail');document.getElementById('gh-token').focus();return false;}
-  cmdLog(`Sending: "${command.slice(0,50)}${command.length>50?'...':''}"`,`pending`);
-  try{
-    const r=await fetch(`https://api.github.com/repos/${GH_OWNER}/${GH_REPO}/actions/workflows/claude-command.yml/dispatches`,{
-      method:'POST',
-      headers:{'Authorization':`token ${token}`,'Accept':'application/vnd.github+json','Content-Type':'application/json'},
-      body:JSON.stringify({ref:'main',inputs:{command:command,project:project||'general'}})
-    });
-    if(r.status===204){cmdLog('Command sent — running in GitHub Actions','sent');return true;}
-    else{const j=await r.json().catch(()=>({}));cmdLog(`Failed: ${j.message||r.status}`,'fail');return false;}
-  }catch(e){cmdLog('Network error: '+e.message,'fail');return false;}
+function sendCmd(cmd){
+  cmdLog(`Opening Claude: "${cmd.slice(0,40)}..."`,`sent`);
+  window.open(CLAUDE_URL,'_blank');
 }
-function sendCmd(cmd){triggerWorkflow(cmd,'general')}
 function sendCustomCmd(){
   const txt=document.getElementById('cmd-text').value.trim();
-  if(!txt)return;
+  if(!txt){return;}
   const proj=document.getElementById('cmd-project').value;
-  triggerWorkflow(txt,proj);
+  const full=proj!=='general'?`[Project: ${proj}] ${txt}`:txt;
+  cmdLog(`Command: "${full.slice(0,50)}${full.length>50?'...':''}"`,`sent`);
+  window.open(CLAUDE_URL,'_blank');
   document.getElementById('cmd-text').value='';
 }
 document.getElementById('cmd-text').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendCustomCmd();}});
-async function checkRuns(){
-  const token=getToken();if(!token)return;
-  try{
-    const r=await fetch(`https://api.github.com/repos/${GH_OWNER}/${GH_REPO}/actions/runs?per_page=3`,{headers:{'Authorization':`token ${token}`,'Accept':'application/vnd.github+json'}});
-    if(!r.ok)return;
-    const d=await r.json();
-    (d.workflow_runs||[]).forEach(run=>{
-      if(run.name==='Claude Command'){
-        const s=run.status==='completed'?(run.conclusion==='success'?'sent':'fail'):'pending';
-        const ago=Math.round((Date.now()-new Date(run.created_at))/60000);
-        if(ago<10)cmdLog(`Run #${run.run_number}: ${run.status}${run.conclusion?' ('+run.conclusion+')':''}`,s);
-      }
-    });
-  }catch(e){}
-}
-function init(){render();checkAll();initToken();setInterval(checkAll,60000);setInterval(()=>{document.getElementById('clock').textContent=new Date().toLocaleTimeString('en-GB');},1000);}
+function init(){render();checkAll();setInterval(checkAll,60000);setInterval(()=>{document.getElementById('clock').textContent=new Date().toLocaleTimeString('en-GB');},1000);}
 if(sessionStorage.getItem(SK)==='1'){document.getElementById('lock').style.display='none';document.getElementById('app').style.display='block';init();}
 </script>
 </body>
