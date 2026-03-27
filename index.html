@@ -78,6 +78,7 @@
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-storage-compat.js"></script>
+  <script>if(typeof firebase==='undefined'){window.firebase={initializeApp:function(){return{}},auth:function(){return{onAuthStateChanged:function(){},signInAnonymously:function(){return Promise.resolve()},signOut:function(){return Promise.resolve()}}},firestore:function(){return{enablePersistence:function(){return Promise.resolve()},collection:function(){return{doc:function(){return{get:function(){return Promise.resolve({exists:false})},set:function(){return Promise.resolve()},onSnapshot:function(){return function(){}}}}}}}},storage:function(){return{}}}}</script>
   <script src="app.js"></script>
 </body>
 </html>

@@ -39,13 +39,11 @@ function syncStatus(s) { const dot = $("#sync-dot"), txt = $("#sync-text"); if (
 
 /* ═══ FIREBASE INIT ═══════════════════════════════════════════ */
 function initFirebase() {
-  if (FIREBASE_CONFIG.apiKey === "YOUR_API_KEY") {
-    $("#loading").innerHTML = `<div style="text-align:center;max-width:500px;padding:24px"><div style="font-size:1.4rem;font-weight:700;margin-bottom:12px">&#9888; Firebase Not Configured</div><div style="font-size:.9rem;opacity:.8;line-height:1.6">Open <b>app.js</b> and replace <b>FIREBASE_CONFIG</b> with your Firebase project credentials.</div></div>`;
-    return false;
-  }
-  fb = firebase.initializeApp(FIREBASE_CONFIG);
-  auth = firebase.auth(); db = firebase.firestore(); storage = firebase.storage();
-  db.enablePersistence({ synchronizeTabs: true }).catch(e => console.warn("Persistence:", e));
+  try {
+    fb = firebase.initializeApp(FIREBASE_CONFIG);
+    auth = firebase.auth(); db = firebase.firestore(); storage = firebase.storage();
+    db.enablePersistence({ synchronizeTabs: true }).catch(e => console.warn("Persistence:", e));
+  } catch(e) { console.warn("Firebase init:", e); }
   return true;
 }
 
