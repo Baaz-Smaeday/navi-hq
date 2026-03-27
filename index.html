@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>XEagle ComplianceOS</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><text y='24' font-size='24'>&#9881;</text></svg>">
+</head>
+<body>
+
+  <div class="loading-overlay" id="loading"><div class="lo-spin"></div><div>ComplianceOS</div></div>
+
+  <div class="login-bg login-hidden" id="login-screen">
+    <div class="login-box">
+      <div class="lb-logo">XEagle Ltd</div>
+      <div class="lb-sub">ComplianceOS</div>
+      <div class="lb-fg"><label>Email</label><input id="l-user" type="email" autocomplete="email" autofocus></div>
+      <div class="lb-fg"><label>Password</label><input id="l-pass" type="password" autocomplete="current-password"></div>
+      <button class="lb-btn" id="l-btn">Sign In</button>
+      <div class="lb-err" id="l-err"></div>
+    </div>
+  </div>
+
+  <div id="app-wrap" class="login-hidden">
+    <div class="gdpr">&#128274; <strong>INTERNAL SYSTEM</strong> — Confidential. GDPR & Data Protection Act 2018 apply.</div>
+    <div class="wrap">
+      <aside class="sidebar" id="sidebar">
+        <div class="sb-hd"><div class="co">XEagle Ltd</div><div class="sub">ComplianceOS</div></div>
+        <div class="sb-user">
+          <div class="su-avatar" id="su-avatar">A</div>
+          <div class="su-info"><div class="su-name" id="su-name">Admin</div><div class="su-role" id="su-role">Admin</div></div>
+          <button class="su-logout" onclick="logout()" title="Sign out">&#9211;</button>
+        </div>
+        <div class="sb-office"><select id="office-sel" onchange="officeChanged()"></select></div>
+        <nav class="sb-nav" id="sb-nav"></nav>
+        <div class="sb-ft">
+          <div class="theme-toggle" id="theme-toggle">
+            <div class="tt-opt active" data-t="light">&#9788; Light</div>
+            <div class="tt-opt" data-t="dark">&#9790; Dark</div>
+          </div>
+          <div class="sb-label">Data</div>
+          <button class="sb-btn" onclick="expJSON()">Export JSON</button>
+          <div class="sb-ver"><span class="sync-dot online" id="sync-dot"></span><span id="sync-text">Connected</span> · v10</div>
+        </div>
+      </aside>
+      <main class="main">
+        <div class="pg-hd">
+          <h1 id="pg-title">Dashboard</h1>
+          <div class="hd-meta">
+            <button class="alert-bell silent" id="alert-bell" onclick="showAlerts()" title="View alerts">&#128276;<span class="ab-count" id="ab-count" style="display:none">0</span></button>
+            <span class="hd-date" id="hd-date"></span>
+          </div>
+        </div>
+        <div class="pg-body">
+          <div id="p-dashboard" class="pg active"><div id="c-dashboard"></div></div>
+          <div id="p-employees" class="pg"><div id="c-employees"></div></div>
+          <div id="p-visa" class="pg"><div id="c-visa"></div></div>
+          <div id="p-attendance" class="pg"><div id="c-attendance"></div></div>
+          <div id="p-reporting" class="pg"><div id="c-reporting"></div></div>
+          <div id="p-vehicles" class="pg"><div id="c-vehicles"></div></div>
+          <div id="p-documents" class="pg"><div id="c-documents"></div></div>
+          <div id="p-training" class="pg"><div id="c-training"></div></div>
+          <div id="p-hrCases" class="pg"><div id="c-hrCases"></div></div>
+          <div id="p-cos" class="pg"><div id="c-cos"></div></div>
+          <div id="p-sponsorHub" class="pg"><div id="c-sponsorHub"></div></div>
+          <div id="p-reports" class="pg"><div id="c-reports"></div></div>
+          <div id="p-users" class="pg"><div id="c-users"></div></div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <div class="mbg" id="mbg"><div class="mbox"><div class="mhd"><h2 id="mtitle"></h2><button class="mx" id="mx">&times;</button></div><div class="mbd" id="mbody"></div></div></div>
+  <input type="file" id="file-input" multiple style="display:none">
+  <input type="file" id="camera-input" capture="environment" accept="image/*" style="display:none">
+
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-storage-compat.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
