@@ -98,11 +98,13 @@ while true; do
             keystroke "claude"
             delay 0.2
             key code 36
+            delay 5
+            key code 36
           end tell
         end tell
       '
-      update_status "$ID" "done" "Opened new Claude Code chat in Warp"
-      echo "✅ New Claude chat opened in Warp"
+      update_status "$ID" "done" "Opened new Claude Code chat in Warp (auto-accepted trust)"
+      echo "✅ New Claude chat opened in Warp (auto-pressed Enter)"
 
     # Lock/sleep Mac
     elif echo "$CMD_LOWER" | grep -qE "^(lock|sleep|lock screen)"; then
