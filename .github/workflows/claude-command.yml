@@ -1,0 +1,51 @@
+name: Claude Command
+on:
+  workflow_dispatch:
+    inputs:
+      command:
+        description: 'Command for Claude Code'
+        required: true
+        type: string
+      project:
+        description: 'Target project (or "general")'
+        required: false
+        default: 'general'
+        type: string
+
+jobs:
+  run-command:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Claude Code
+        run: npm install -g @anthropic-ai/claude-code
+
+      - name: Run Command
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          echo "## Command" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          echo "${{ inputs.command }}" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          echo "**Project:** ${{ inputs.project }}" >> $GITHUB_STEP_SUMMARY
+          echo "---" >> $GITHUB_STEP_SUMMARY
+          echo "## Result" >> $GITHUB_STEP_SUMMARY
+
+          RESULT=$(claude -p "${{ inputs.command }}" --max-turns 5 2>&1 || true)
+
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          echo "$RESULT" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+
+          echo "$RESULT" > result.txt
+
+      - name: Upload Result
+        uses: actions/upload-artifact@v4
+        with:
+          name: claude-result
+          path: result.txt
+          retention-days: 7
