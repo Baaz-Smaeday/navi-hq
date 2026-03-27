@@ -180,6 +180,24 @@ header{padding:26px 20px 18px;border-bottom:1px solid #1a1a1a;display:flex;align
     <div class="cmd-box" style="margin:0">
       <div style="font-family:'DM Mono',monospace;font-size:9px;color:#444;margin-bottom:4px">Types directly into the open Claude chat in Warp</div>
       <div class="cmd-row">
+        <select class="cmd-sel" id="type-project">
+          <option value="">No project</option>
+          <option value="complyfleet">ComplyFleet</option>
+          <option value="desimind">DesiMind</option>
+          <option value="sivohome">SIVO Home</option>
+          <option value="xeagle-booking">XEagle Booking</option>
+          <option value="uk-theory-test">UK Theory Test</option>
+          <option value="LoadLink">LoadLink</option>
+          <option value="eagle-academy-platform">Eagle Academy</option>
+          <option value="sivo-app">SIVO App</option>
+          <option value="dispatch-course">Dispatch Course</option>
+          <option value="letifi">Letifi</option>
+          <option value="garagealert">GarageAlert</option>
+          <option value="accuportal-backend">AccuPortal</option>
+          <option value="uk-cartheory-classroom">Car Theory Classroom</option>
+        </select>
+      </div>
+      <div class="cmd-row">
         <textarea class="cmd-input" id="type-text" placeholder="Type message for Claude chat..." rows="2"></textarea>
       </div>
       <button class="cmd-send" style="width:100%" onclick="typeToWarp()">Type into Warp</button>
@@ -465,7 +483,9 @@ async function loadHistory(){
 async function typeToWarp(){
   const txt=document.getElementById('type-text').value.trim();
   if(!txt)return;
-  await sendCmd('> '+txt);
+  const proj=document.getElementById('type-project').value;
+  const full=proj?`[Project: ${proj}] ${txt}`:txt;
+  await sendCmd('> '+full);
   document.getElementById('type-text').value='';
 }
 document.getElementById('type-text').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();typeToWarp();}});
