@@ -410,6 +410,7 @@ async function sendCustomCmd(){
   }catch(e){toast('Network error',true);cmdLog('Network error','fail');}
   document.getElementById('cmd-text').value='';
 }
+let lastResultId='';
 function startPolling(){
   if(pollTimer)clearInterval(pollTimer);
   let checks=0;
@@ -417,19 +418,21 @@ function startPolling(){
   pollTimer=setInterval(async()=>{
     checks++;
     try{
-      const r=await fetch(SB_URL+'/rest/v1/commands?order=completed_at.desc&limit=1&status=in.(done,error)',{headers:SB_HDR});
+      const r=await fetch(SB_URL+'/rest/v1/commands?order=created_at.desc&limit=1',{headers:SB_HDR});
       const d=await r.json();
       if(d.length>0){
-        const c=d[0],ago=Math.round((Date.now()-new Date(c.completed_at))/1000);
-        if(ago<120){
+        const c=d[0];
+        if((c.status==='done'||c.status==='error')&&c.id!==lastResultId){
+          lastResultId=c.id;
           cmdLog(`Result: ${(c.result||'Done').slice(0,300)}`,c.status==='done'?'sent':'fail');
           showResult(c.result||'Done',c.completed_at);
+          toast('Result received!');
           checkLaptop();
           clearInterval(pollTimer);pollTimer=null;
         }
       }
-    }catch(e){}
-    if(checks>120){clearInterval(pollTimer);pollTimer=null;document.getElementById('rp-spinner').style.display='none';}
+    }catch(e){console.log('poll error',e);}
+    if(checks>150){clearInterval(pollTimer);pollTimer=null;document.getElementById('rp-spinner').style.display='none';toast('Timed out waiting',true);}
   },2000);
 }
 function showResult(text,timestamp){
