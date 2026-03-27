@@ -716,13 +716,18 @@ document.addEventListener("DOMContentLoaded", () => {
   setTheme(saved);
   $$("#theme-toggle .tt-opt").forEach(o => o.addEventListener("click", () => setTheme(o.dataset.t)));
 
-  if (!initFirebase()) return;
+  initFirebase();
   $("#mx").addEventListener("click", closeM);
   $("#mbg").addEventListener("click", e => { if (e.target.id === "mbg") closeM() });
   $("#l-btn").addEventListener("click", doLogin);
-  $("#l-pass").addEventListener("keydown", e => { if (e.key === "Enter") doLogin() });
-  $("#l-user").addEventListener("keydown", e => { if (e.key === "Enter") $("#l-pass").focus() });
-  auth.onAuthStateChanged(onAuthChange);
+  $("#l-pin").addEventListener("keydown", e => { if (e.key === "Enter") doLogin() });
+  // Check if already authenticated via PIN
+  if (sessionStorage.getItem("navi-pin-auth")) {
+    onAuthChange(null);
+  } else {
+    $("#loading").classList.add("login-hidden");
+    $("#login-screen").classList.remove("login-hidden");
+  }
   window.addEventListener("online", () => syncStatus("online"));
   window.addEventListener("offline", () => syncStatus("offline"));
 });
