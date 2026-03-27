@@ -4,10 +4,15 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Navi HQ</title>
+<link rel="manifest" href="data:application/json,{&quot;name&quot;:&quot;Navi HQ&quot;,&quot;short_name&quot;:&quot;NaviHQ&quot;,&quot;start_url&quot;:&quot;.&quot;,&quot;display&quot;:&quot;standalone&quot;,&quot;background_color&quot;:&quot;%230a0a0a&quot;,&quot;theme_color&quot;:&quot;%2300e676&quot;}">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#0a0a0a">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect fill='%230a0a0a' width='32' height='32' rx='6'/><text x='4' y='23' font-size='18' font-weight='900' fill='%2300e676'>N</text></svg>">
 <style>
 @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;600;800&display=swap');
 *{box-sizing:border-box;margin:0;padding:0}
-body{font-family:'Syne',sans-serif;background:#0a0a0a;color:#f0f0f0;min-height:100vh;padding-bottom:40px}
+body{font-family:'Syne',sans-serif;background:#0a0a0a;color:#f0f0f0;min-height:100vh;padding-bottom:40px;-webkit-tap-highlight-color:transparent}
 #lock{position:fixed;inset:0;background:#0a0a0a;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:99;padding:32px 24px}
 .l-logo{font-size:30px;font-weight:800;letter-spacing:-1px;margin-bottom:6px}
 .l-logo span{color:#00e676}
@@ -24,12 +29,22 @@ header{padding:26px 20px 18px;border-bottom:1px solid #1a1a1a;display:flex;align
 .logo{font-size:20px;font-weight:800;letter-spacing:-.5px}
 .logo span{color:#00e676}
 .htime{font-family:'DM Mono',monospace;font-size:10px;color:#444;text-align:right;line-height:1.7;cursor:pointer}
-.stats{display:grid;grid-template-columns:1fr 1fr 1fr;gap:1px;background:#1a1a1a;border-bottom:1px solid #1a1a1a}
+/* Laptop status */
+.laptop-bar{display:flex;align-items:center;gap:8px;padding:8px 20px;background:#0e0e0e;border-bottom:1px solid #1a1a1a;font-family:'DM Mono',monospace;font-size:10px}
+.laptop-dot{width:6px;height:6px;border-radius:50%;background:#ff4d4d}
+.laptop-dot.on{background:#00e676;box-shadow:0 0 4px #00e676}
+.laptop-status{color:#444}
+.laptop-status.on{color:#00e676}
+/* Stats */
+.stats{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:1px;background:#1a1a1a;border-bottom:1px solid #1a1a1a}
 .stat{background:#0e0e0e;padding:14px 0;text-align:center}
-.stat-n{font-size:28px;font-weight:800;line-height:1}
+.stat-n{font-size:24px;font-weight:800;line-height:1}
 .stat-l{font-family:'DM Mono',monospace;font-size:9px;color:#444;text-transform:uppercase;letter-spacing:.06em;margin-top:3px}
+/* Sections */
 .sh{padding:18px 20px 8px;font-family:'DM Mono',monospace;font-size:10px;color:#444;text-transform:uppercase;letter-spacing:.1em;display:flex;align-items:center;gap:8px}
 .sh::after{content:'';flex:1;height:1px;background:#1a1a1a}
+.sh .sh-count{background:#1a1a1a;padding:1px 6px;border-radius:8px;font-size:9px}
+/* Project cards */
 .list{padding:0 12px;display:flex;flex-direction:column;gap:7px}
 .card{background:#111;border:1px solid #1e1e1e;border-radius:12px;padding:14px 16px;display:flex;align-items:center;gap:13px;text-decoration:none;color:#f0f0f0;position:relative;overflow:hidden;transition:border-color .2s}
 .card::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;border-radius:3px 0 0 3px;background:#2a2a2a;transition:background .3s}
@@ -57,44 +72,65 @@ header{padding:26px 20px 18px;border-bottom:1px solid #1a1a1a;display:flex;align
 .checking .cstatus{background:rgba(255,179,0,.08);color:#ffb300}
 .proto .cstatus{background:rgba(77,159,255,.08);color:#4d9fff}
 .ctime{font-family:'DM Mono',monospace;font-size:9px;color:#333}
+/* Buttons */
 .btn-r{display:block;margin:16px 12px 0;width:calc(100% - 24px);background:transparent;border:1px solid #222;border-radius:10px;padding:13px;color:#f0f0f0;font-family:'Syne',sans-serif;font-size:13px;font-weight:600;cursor:pointer}
 .btn-r:active{border-color:#00e676;color:#00e676}
+/* Links */
 .links{padding:0 12px;display:flex;flex-direction:column;gap:6px}
 .lnk{background:#111;border:1px solid #1e1e1e;border-radius:10px;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;text-decoration:none;color:#f0f0f0;font-size:13px;font-weight:600}
 .lnk:active{border-color:#00e676}
 .lnk-sub{font-family:'DM Mono',monospace;font-size:9px;color:#444;font-weight:400;margin-top:1px}
 .lnk-arr{font-family:'DM Mono',monospace;font-size:13px;color:#333}
-.btn-lk{display:block;margin:14px 12px 0;width:calc(100% - 24px);background:transparent;border:1px solid #1e1e1e;border-radius:10px;padding:11px;color:#333;font-family:'DM Mono',monospace;font-size:11px;cursor:pointer;letter-spacing:.05em}
-.btn-lk:active{border-color:#ff4d4d;color:#ff4d4d}
+/* Remote Control */
+.rc-grid{padding:0 12px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px}
+.rc-btn{background:#111;border:1px solid #1e1e1e;border-radius:10px;padding:12px 8px;text-align:center;cursor:pointer;font-family:'DM Mono',monospace;font-size:9px;color:#888;line-height:1.3}
+.rc-btn:active{border-color:#00e676;color:#00e676}
+.rc-ico{font-size:20px;margin-bottom:4px}
+/* Command Centre */
 .cmd-box{margin:0 12px;background:#111;border:1px solid #1e1e1e;border-radius:12px;padding:16px;display:flex;flex-direction:column;gap:10px}
 .cmd-input{width:100%;background:#0a0a0a;border:1px solid #2a2a2a;border-radius:10px;padding:12px 14px;color:#f0f0f0;font-family:'DM Mono',monospace;font-size:13px;outline:none;resize:none;min-height:44px}
 .cmd-input:focus{border-color:#00e676}
 .cmd-input::placeholder{color:#333}
 .cmd-row{display:flex;gap:6px}
-.cmd-send{flex:1;background:#00e676;border:none;border-radius:8px;padding:11px;color:#000;font-family:'Syne',sans-serif;font-size:13px;font-weight:800;cursor:pointer}
+.cmd-send{background:#00e676;border:none;border-radius:8px;padding:11px 16px;color:#000;font-family:'Syne',sans-serif;font-size:13px;font-weight:800;cursor:pointer;white-space:nowrap}
 .cmd-send:active{opacity:.8}
 .cmd-send:disabled{opacity:.4;cursor:not-allowed}
 .cmd-sel{flex:1;background:#0a0a0a;border:1px solid #2a2a2a;border-radius:8px;padding:11px;color:#f0f0f0;font-family:'DM Mono',monospace;font-size:11px;outline:none}
+.cmd-voice{background:#161616;border:1px solid #222;border-radius:8px;padding:11px 14px;cursor:pointer;font-size:16px;color:#888}
+.cmd-voice:active,.cmd-voice.recording{border-color:#ff4d4d;color:#ff4d4d;background:rgba(255,77,77,.05)}
 .qk-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px}
 .qk-btn{background:#161616;border:1px solid #222;border-radius:8px;padding:10px 8px;color:#f0f0f0;font-family:'DM Mono',monospace;font-size:10px;cursor:pointer;text-align:left;line-height:1.3}
 .qk-btn:active{border-color:#00e676;color:#00e676}
 .qk-ico{font-size:14px;margin-bottom:3px}
-.cmd-log{background:#0a0a0a;border:1px solid #1a1a1a;border-radius:8px;padding:10px 12px;font-family:'DM Mono',monospace;font-size:10px;color:#444;max-height:150px;overflow-y:auto;display:none}
+/* Command log */
+.cmd-log{background:#0a0a0a;border:1px solid #1a1a1a;border-radius:8px;padding:10px 12px;font-family:'DM Mono',monospace;font-size:10px;color:#444;max-height:200px;overflow-y:auto;display:none}
 .cmd-log.active{display:block}
 .cmd-log .entry{padding:4px 0;border-bottom:1px solid #111}
 .cmd-log .entry:last-child{border:none}
 .cmd-log .sent{color:#00e676}
 .cmd-log .fail{color:#ff4d4d}
 .cmd-log .pending{color:#ffb300}
-.cmd-setup{background:#111;border:1px solid #1e1e1e;border-radius:10px;padding:12px 16px;margin:0 12px}
-.cmd-setup label{font-family:'DM Mono',monospace;font-size:10px;color:#555;text-transform:uppercase;letter-spacing:.1em;display:block;margin-bottom:6px}
-.cmd-setup input{width:100%;background:#0a0a0a;border:1px solid #2a2a2a;border-radius:8px;padding:10px 12px;color:#f0f0f0;font-family:'DM Mono',monospace;font-size:11px;outline:none}
-.cmd-setup input:focus{border-color:#00e676}
-.cmd-setup .hint{font-family:'DM Mono',monospace;font-size:9px;color:#333;margin-top:6px}
+/* Result panel */
+.result-panel{margin:8px 12px 0;background:#0a0a0a;border:1px solid #1e1e1e;border-radius:10px;padding:14px;display:none;font-family:'DM Mono',monospace;font-size:11px;color:#ccc;line-height:1.6;max-height:300px;overflow-y:auto;white-space:pre-wrap;word-break:break-word}
+.result-panel.active{display:block}
+.result-panel .rp-head{color:#00e676;font-weight:500;margin-bottom:8px;font-size:10px;text-transform:uppercase;letter-spacing:.05em}
+/* Saved commands */
+.saved-grid{padding:0 12px;display:flex;flex-wrap:wrap;gap:6px}
+.saved-chip{background:#161616;border:1px solid #222;border-radius:20px;padding:6px 12px;font-family:'DM Mono',monospace;font-size:10px;color:#888;cursor:pointer;white-space:nowrap}
+.saved-chip:active{border-color:#00e676;color:#00e676}
+.saved-chip .del{margin-left:6px;color:#333;font-size:12px}
+/* Footer */
+.btn-lk{display:block;margin:14px 12px 0;width:calc(100% - 24px);background:transparent;border:1px solid #1e1e1e;border-radius:10px;padding:11px;color:#333;font-family:'DM Mono',monospace;font-size:11px;cursor:pointer;letter-spacing:.05em}
+.btn-lk:active{border-color:#ff4d4d;color:#ff4d4d}
 .ticker{font-family:'DM Mono',monospace;font-size:10px;color:#333;padding:10px 20px;border-top:1px solid #1a1a1a;margin-top:28px;text-align:center}
+/* Notification toast */
+.toast{position:fixed;top:20px;left:50%;transform:translateX(-50%);background:#111;border:1px solid #00e676;border-radius:10px;padding:10px 16px;font-family:'DM Mono',monospace;font-size:11px;color:#00e676;z-index:100;display:none;animation:slideDown .3s ease}
+.toast.err{border-color:#ff4d4d;color:#ff4d4d}
+@keyframes slideDown{from{opacity:0;transform:translateX(-50%) translateY(-10px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
 </style>
 </head>
 <body>
+<div class="toast" id="toast"></div>
 <div id="lock">
   <div class="l-logo">NAVI <span>HQ</span></div>
   <div class="l-sub">project command centre</div>
@@ -110,22 +146,37 @@ header{padding:26px 20px 18px;border-bottom:1px solid #1a1a1a;display:flex;align
     <div class="logo">NAVI <span>HQ</span></div>
     <div class="htime" onclick="checkAll()"><div id="clock">--:--:--</div><div>tap to refresh</div></div>
   </header>
+  <div class="laptop-bar">
+    <div class="laptop-dot" id="lp-dot"></div>
+    <div class="laptop-status" id="lp-status">Laptop: checking...</div>
+  </div>
   <div class="stats">
     <div class="stat"><div class="stat-n" id="n-live" style="color:#00e676">—</div><div class="stat-l">Live</div></div>
     <div class="stat"><div class="stat-n" id="n-proto" style="color:#4d9fff">—</div><div class="stat-l">Building</div></div>
     <div class="stat"><div class="stat-n" id="n-issue" style="color:#ff4d4d">—</div><div class="stat-l">Issues</div></div>
+    <div class="stat"><div class="stat-n" id="n-cmds" style="color:#ffb300">—</div><div class="stat-l">Commands</div></div>
   </div>
-  <div class="sh">Projects</div>
+
+  <div class="sh">Projects <span class="sh-count" id="p-count">0</span></div>
   <div class="list" id="list"></div>
-  <button class="btn-r" onclick="checkAll()">↻ Check all projects</button>
-  <div class="sh" style="margin-top:16px">Tools</div>
-  <div class="links">
-    <a class="lnk" href="https://vercel.com/dashboard" target="_blank"><div><div>Vercel</div><div class="lnk-sub">deployments · logs</div></div><span class="lnk-arr">↗</span></a>
-    <a class="lnk" href="https://supabase.com/dashboard" target="_blank"><div><div>Supabase</div><div class="lnk-sub">databases · auth</div></div><span class="lnk-arr">↗</span></a>
-    <a class="lnk" href="https://github.com/baaz-smaeday" target="_blank"><div><div>GitHub</div><div class="lnk-sub">repos · commits</div></div><span class="lnk-arr">↗</span></a>
-    <a class="lnk" href="https://app.canva.com" target="_blank"><div><div>Canva</div><div class="lnk-sub">design assets</div></div><span class="lnk-arr">↗</span></a>
-    <a class="lnk" href="https://dashboard.stripe.com" target="_blank"><div><div>Stripe</div><div class="lnk-sub">payments · revenue</div></div><span class="lnk-arr">↗</span></a>
+  <button class="btn-r" onclick="checkAll()">&#8635; Check all projects</button>
+
+  <div class="sh" style="margin-top:16px">Remote Control</div>
+  <div class="rc-grid">
+    <div class="rc-btn" onclick="sendCmd('new claude chat')"><div class="rc-ico">&#129302;</div>New Claude</div>
+    <div class="rc-btn" onclick="sendCmd('open chrome')"><div class="rc-ico">&#127760;</div>Chrome</div>
+    <div class="rc-btn" onclick="sendCmd('open warp')"><div class="rc-ico">&#9000;</div>Warp</div>
+    <div class="rc-btn" onclick="sendCmd('open vscode')"><div class="rc-ico">&#128187;</div>VS Code</div>
+    <div class="rc-btn" onclick="sendCmd('open finder')"><div class="rc-ico">&#128193;</div>Finder</div>
+    <div class="rc-btn" onclick="sendCmd('screenshot')"><div class="rc-ico">&#128247;</div>Screenshot</div>
+    <div class="rc-btn" onclick="sendCmd('open safari')"><div class="rc-ico">&#129517;</div>Safari</div>
+    <div class="rc-btn" onclick="sendCmd('lock')"><div class="rc-ico">&#128274;</div>Lock Mac</div>
+    <div class="rc-btn" onclick="sendCmd('open https://claude.ai/code')"><div class="rc-ico">&#9889;</div>Claude Web</div>
   </div>
+
+  <div class="sh" style="margin-top:16px">Quick Commands</div>
+  <div class="saved-grid" id="saved-grid"></div>
+
   <div class="sh" style="margin-top:16px">Command Centre</div>
   <div class="cmd-box">
     <div class="qk-grid">
@@ -134,7 +185,10 @@ header{padding:26px 20px 18px;border-bottom:1px solid #1a1a1a;display:flex;align
       <button class="qk-btn" onclick="sendCmd('List any build errors or failing tests across projects')"><div class="qk-ico">&#128295;</div>Check Errors</button>
       <button class="qk-btn" onclick="sendCmd('Show deployment status for all Vercel and GitHub Pages projects')"><div class="qk-ico">&#128640;</div>Deploy Status</button>
     </div>
-    <textarea class="cmd-input" id="cmd-text" placeholder="Type a command for Claude..." rows="2"></textarea>
+    <div class="cmd-row">
+      <textarea class="cmd-input" id="cmd-text" placeholder="Type a command or tap mic..." rows="2"></textarea>
+      <button class="cmd-voice" id="cmd-mic" onclick="toggleVoice()" title="Voice command">&#127908;</button>
+    </div>
     <div class="cmd-row">
       <select class="cmd-sel" id="cmd-project">
         <option value="general">All Projects</option>
@@ -152,23 +206,33 @@ header{padding:26px 20px 18px;border-bottom:1px solid #1a1a1a;display:flex;align
         <option value="accuportal-backend">AccuPortal</option>
         <option value="uk-cartheory-classroom">Car Theory Classroom</option>
       </select>
-      <button class="cmd-send" id="cmd-go" onclick="sendCustomCmd()">Send to Laptop</button>
+      <button class="cmd-send" onclick="sendCustomCmd()">Send</button>
+      <button class="cmd-send" style="background:#161616;color:#888;border:1px solid #222" onclick="saveCurrentCmd()">Save</button>
     </div>
     <div class="cmd-log" id="cmd-log"></div>
   </div>
-  <button class="btn-lk" onclick="doLock()">⎋ Lock</button>
+  <div class="result-panel" id="result-panel"><div class="rp-head">Latest Result</div><div id="result-body"></div></div>
+
+  <div class="sh" style="margin-top:16px">Tools</div>
+  <div class="links">
+    <a class="lnk" href="https://claude.ai/code" target="_blank"><div><div>Claude Code</div><div class="lnk-sub">AI coding · free with Max plan</div></div><span class="lnk-arr">&#8599;</span></a>
+    <a class="lnk" href="https://vercel.com/dashboard" target="_blank"><div><div>Vercel</div><div class="lnk-sub">deployments · logs</div></div><span class="lnk-arr">&#8599;</span></a>
+    <a class="lnk" href="https://supabase.com/dashboard" target="_blank"><div><div>Supabase</div><div class="lnk-sub">databases · auth</div></div><span class="lnk-arr">&#8599;</span></a>
+    <a class="lnk" href="https://github.com/baaz-smaeday" target="_blank"><div><div>GitHub</div><div class="lnk-sub">repos · commits</div></div><span class="lnk-arr">&#8599;</span></a>
+    <a class="lnk" href="https://app.canva.com" target="_blank"><div><div>Canva</div><div class="lnk-sub">design assets</div></div><span class="lnk-arr">&#8599;</span></a>
+    <a class="lnk" href="https://dashboard.stripe.com" target="_blank"><div><div>Stripe</div><div class="lnk-sub">payments · revenue</div></div><span class="lnk-arr">&#8599;</span></a>
+  </div>
+  <button class="btn-lk" onclick="doLock()">&#9099; Lock</button>
   <div class="ticker" id="ticker">Initialising...</div>
 </div>
 <script>
 const PIN='2578',SK='nhq_ok';
 const P=[
-  /* ── Live ── */
   {name:'ComplyFleet',       url:'https://complyfleet.co.uk',                     repo:'complyfleet',                  label:'complyfleet.co.uk',   tags:['Next.js','Supabase'],hot:'Add Stripe',   type:'live'},
   {name:'DesiMind',          url:'https://desimind.co.uk',                        repo:'desimind',                     label:'desimind.co.uk',      tags:['Next.js','Supabase'],hot:'Shopify token',type:'live'},
   {name:'SIVO Home',         url:'https://sivohome.com',                          repo:'sivohome',                     label:'sivohome.com',        tags:['Next.js'],           hot:null,           type:'live'},
   {name:'UK Theory Test',    url:'https://baaz-smaeday.github.io/uk-theory-test', repo:'eagle-uk-theory-test-platform',label:'GitHub Pages',        tags:['HTML/JS'],           hot:null,           type:'live'},
   {name:'Navi HQ',           url:'https://baaz-smaeday.github.io/navi-hq/',      repo:'navi-hq',                      label:'GitHub Pages',        tags:['Dashboard'],         hot:null,           type:'live'},
-  /* ── Building ── */
   {name:'XEagle Booking',    url:null, repo:'xeagle-booking',             label:'Courier platform',     tags:['Next.js','Supabase'],hot:null,           type:'proto'},
   {name:'LoadLink',          url:null, repo:'LoadLink',                   label:'In development',       tags:['React Native'],      hot:null,           type:'proto'},
   {name:'Eagle Academy',     url:null, repo:'eagle-academy-platform',     label:'In development',       tags:['React/JS'],          hot:'Deploy needed',type:'proto'},
@@ -179,6 +243,21 @@ const P=[
   {name:'GarageAlert',       url:null, repo:'garagealert',                label:'In development',       tags:['App'],               hot:null,           type:'proto'},
   {name:'AccuPortal',        url:null, repo:'accuportal-backend',         label:'Backend API',          tags:['Backend'],           hot:null,           type:'proto'},
 ];
+
+/* === Supabase Config === */
+const SB_URL='https://nibemnomfzflvpnlfgbh.supabase.co';
+const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5pYmVtbm9tZnpmbHZwbmxmZ2JoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQyOTMzNzYsImV4cCI6MjA4OTg2OTM3Nn0.0gQPv67Bh5Fh1PocqENfPCm-dWQDe41886VfLUgQhuM';
+const SB_HDR={'Content-Type':'application/json','apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY};
+let prevOffline=new Set(),pollTimer=null;
+
+/* === Toast notifications === */
+function toast(msg,isErr){
+  const t=document.getElementById('toast');
+  t.textContent=msg;t.className='toast'+(isErr?' err':'');t.style.display='block';
+  setTimeout(()=>{t.style.display='none'},3000);
+}
+
+/* === Auth === */
 function tryUnlock(){
   if(document.getElementById('pin').value===PIN){
     sessionStorage.setItem(SK,'1');
@@ -186,10 +265,10 @@ function tryUnlock(){
     document.getElementById('app').style.display='block';
     init();
   }else{
-    const e=document.getElementById('err');
-    e.textContent='Wrong PIN';
+    document.getElementById('err').textContent='Wrong PIN';
     document.getElementById('pin').value='';
-    setTimeout(()=>e.textContent='',2000);
+    if(navigator.vibrate)navigator.vibrate(200);
+    setTimeout(()=>document.getElementById('err').textContent='',2000);
   }
 }
 function doLock(){
@@ -199,9 +278,12 @@ function doLock(){
   document.getElementById('pin').value='';
 }
 document.getElementById('pin').addEventListener('keydown',e=>{if(e.key==='Enter')tryUnlock()});
+
+/* === Render projects === */
 function render(){
   const list=document.getElementById('list');
   list.innerHTML='';
+  document.getElementById('p-count').textContent=P.length;
   P.forEach((p,i)=>{
     const el=document.createElement('a');
     el.href=p.url||('https://github.com/Baaz-Smaeday/'+p.repo);el.target='_blank';
@@ -211,18 +293,20 @@ function render(){
     list.appendChild(el);
   });
 }
+
+/* === Health checks === */
 async function ping(i){
   const p=P[i];if(!p.url)return;
-  const card=document.getElementById('c'+i);
-  const s=document.getElementById('s'+i);
-  const t=document.getElementById('t'+i);
+  const card=document.getElementById('c'+i),s=document.getElementById('s'+i),t=document.getElementById('t'+i);
   card.className='card checking';s.textContent='checking';
   const t0=Date.now();
   try{
     await fetch(p.url,{method:'HEAD',mode:'no-cors',cache:'no-store'});
     card.className='card online';s.textContent='online';t.textContent=(Date.now()-t0)+'ms';
+    if(prevOffline.has(p.name)){prevOffline.delete(p.name);toast(p.name+' is back online!');}
   }catch{
     card.className='card offline';s.textContent='offline';t.textContent='no response';
+    if(!prevOffline.has(p.name)){prevOffline.add(p.name);toast(p.name+' went OFFLINE!',true);if(navigator.vibrate)navigator.vibrate([200,100,200]);}
   }
 }
 async function checkAll(){
@@ -239,26 +323,37 @@ async function checkAll(){
   document.getElementById('clock').textContent=now.toLocaleTimeString('en-GB');
   document.getElementById('ticker').textContent=`${on}/${live.length} responding · ${now.toLocaleDateString('en-GB')}`;
 }
-/* === Command Centre — Supabase Relay to laptop Claude Code === */
-const SB_URL='https://nibemnomfzflvpnlfgbh.supabase.co';
-const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5pYmVtbm9tZnpmbHZwbmxmZ2JoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQyOTMzNzYsImV4cCI6MjA4OTg2OTM3Nn0.0gQPv67Bh5Fh1PocqENfPCm-dWQDe41886VfLUgQhuM';
-const SB_HDR={'Content-Type':'application/json','apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY};
 
+/* === Laptop connection check === */
+async function checkLaptop(){
+  try{
+    const r=await fetch(SB_URL+'/rest/v1/commands?order=created_at.desc&limit=1&status=eq.done',{headers:SB_HDR});
+    const d=await r.json();
+    const dot=document.getElementById('lp-dot'),st=document.getElementById('lp-status');
+    if(d.length>0&&d[0].completed_at){
+      const ago=Math.round((Date.now()-new Date(d[0].completed_at))/60000);
+      if(ago<5){dot.classList.add('on');st.classList.add('on');st.textContent='Laptop: connected ('+ago+'m ago)';}
+      else{dot.classList.remove('on');st.classList.remove('on');st.textContent='Laptop: last seen '+ago+'m ago';}
+    }else{dot.classList.remove('on');st.classList.remove('on');st.textContent='Laptop: no recent activity';}
+  }catch(e){document.getElementById('lp-status').textContent='Laptop: offline';}
+}
+
+/* === Command Centre === */
 function cmdLog(msg,cls){
   const log=document.getElementById('cmd-log');
   log.classList.add('active');
   const d=document.createElement('div');d.className='entry '+(cls||'');
-  const now=new Date().toLocaleTimeString('en-GB');
-  d.innerHTML=`<span style="color:#333">${now}</span> ${msg}`;
+  d.innerHTML=`<span style="color:#333">${new Date().toLocaleTimeString('en-GB')}</span> ${msg}`;
   log.prepend(d);
+  if(log.children.length>20)log.removeChild(log.lastChild);
 }
 async function sendCmd(cmd){
-  cmdLog(`Sending: "${cmd.slice(0,40)}..."`,`pending`);
+  cmdLog(`Sending: "${cmd.slice(0,50)}"`,`pending`);
   try{
     const r=await fetch(SB_URL+'/rest/v1/commands',{method:'POST',headers:{...SB_HDR,'Prefer':'return=representation'},body:JSON.stringify({command:cmd,project:'general'})});
-    if(r.ok){cmdLog('Sent to laptop — waiting for Claude...','sent');pollResults();}
-    else{cmdLog('Failed to send','fail');}
-  }catch(e){cmdLog('Network error','fail');}
+    if(r.ok){toast('Command sent!');cmdLog('Sent to laptop','sent');startPolling();}
+    else{toast('Failed to send',true);cmdLog('Failed','fail');}
+  }catch(e){toast('Network error',true);cmdLog('Network error','fail');}
 }
 async function sendCustomCmd(){
   const txt=document.getElementById('cmd-text').value.trim();
@@ -268,42 +363,102 @@ async function sendCustomCmd(){
   cmdLog(`Sending: "${cmd.slice(0,50)}${cmd.length>50?'...':''}"`,`pending`);
   try{
     const r=await fetch(SB_URL+'/rest/v1/commands',{method:'POST',headers:{...SB_HDR,'Prefer':'return=representation'},body:JSON.stringify({command:cmd,project:proj})});
-    if(r.ok){cmdLog('Sent to laptop — waiting for Claude...','sent');pollResults();}
-    else{cmdLog('Failed to send','fail');}
-  }catch(e){cmdLog('Network error','fail');}
+    if(r.ok){toast('Command sent!');cmdLog('Sent to laptop','sent');startPolling();}
+    else{toast('Failed',true);cmdLog('Failed','fail');}
+  }catch(e){toast('Network error',true);cmdLog('Network error','fail');}
   document.getElementById('cmd-text').value='';
 }
-async function pollResults(){
-  const poll=setInterval(async()=>{
+function startPolling(){
+  if(pollTimer)clearInterval(pollTimer);
+  let checks=0;
+  pollTimer=setInterval(async()=>{
+    checks++;
     try{
-      const r=await fetch(SB_URL+'/rest/v1/commands?status=eq.done&order=completed_at.desc&limit=1',{headers:SB_HDR});
-      if(!r.ok)return;
+      const r=await fetch(SB_URL+'/rest/v1/commands?order=completed_at.desc&limit=1&status=in.(done,error)',{headers:SB_HDR});
       const d=await r.json();
       if(d.length>0){
-        const latest=d[0];
-        const ago=Math.round((Date.now()-new Date(latest.completed_at))/1000);
+        const c=d[0],ago=Math.round((Date.now()-new Date(c.completed_at))/1000);
         if(ago<120){
-          cmdLog(`Result: ${(latest.result||'Done').slice(0,200)}`,'sent');
-          clearInterval(poll);
+          cmdLog(`Result: ${(c.result||'Done').slice(0,150)}`,c.status==='done'?'sent':'fail');
+          showResult(c.result||'Done');
+          checkLaptop();
+          clearInterval(pollTimer);pollTimer=null;
         }
       }
     }catch(e){}
+    if(checks>60){clearInterval(pollTimer);pollTimer=null;}
   },5000);
-  setTimeout(()=>clearInterval(poll),300000);
 }
+function showResult(text){
+  const p=document.getElementById('result-panel'),b=document.getElementById('result-body');
+  b.textContent=text;p.classList.add('active');
+}
+
+/* === Voice Commands === */
+let recognition=null,isRecording=false;
+function toggleVoice(){
+  if(!('webkitSpeechRecognition' in window||'SpeechRecognition' in window)){toast('Voice not supported in this browser',true);return;}
+  const mic=document.getElementById('cmd-mic');
+  if(isRecording){recognition.stop();mic.classList.remove('recording');isRecording=false;return;}
+  recognition=new(window.SpeechRecognition||window.webkitSpeechRecognition)();
+  recognition.lang='en-GB';recognition.continuous=false;recognition.interimResults=false;
+  recognition.onresult=e=>{
+    const text=e.results[0][0].transcript;
+    document.getElementById('cmd-text').value=text;
+    toast('Heard: "'+text.slice(0,40)+'"');
+    mic.classList.remove('recording');isRecording=false;
+  };
+  recognition.onerror=()=>{mic.classList.remove('recording');isRecording=false;toast('Voice error',true);};
+  recognition.onend=()=>{mic.classList.remove('recording');isRecording=false;};
+  recognition.start();
+  mic.classList.add('recording');isRecording=true;
+  toast('Listening...');
+}
+
+/* === Saved Commands === */
+function getSaved(){return JSON.parse(localStorage.getItem('nhq_saved')||'[]')}
+function setSaved(arr){localStorage.setItem('nhq_saved',JSON.stringify(arr))}
+function renderSaved(){
+  const grid=document.getElementById('saved-grid');
+  const saved=getSaved();
+  if(!saved.length){grid.innerHTML='<div style="font-family:DM Mono,monospace;font-size:10px;color:#333;padding:4px 0">No saved commands yet. Type one and tap Save.</div>';return;}
+  grid.innerHTML=saved.map((s,i)=>`<div class="saved-chip" onclick="sendCmd('${s.replace(/'/g,"\\'")}')"><span>${s.slice(0,30)}${s.length>30?'...':''}</span><span class="del" onclick="event.stopPropagation();delSaved(${i})">&times;</span></div>`).join('');
+}
+function saveCurrentCmd(){
+  const txt=document.getElementById('cmd-text').value.trim();
+  if(!txt){toast('Type a command first',true);return;}
+  const saved=getSaved();
+  if(saved.includes(txt)){toast('Already saved');return;}
+  saved.push(txt);setSaved(saved);renderSaved();
+  toast('Command saved!');
+}
+function delSaved(i){const saved=getSaved();saved.splice(i,1);setSaved(saved);renderSaved();}
+
+/* === Command history count === */
 async function loadHistory(){
   try{
-    const r=await fetch(SB_URL+'/rest/v1/commands?order=created_at.desc&limit=5',{headers:SB_HDR});
+    const r=await fetch(SB_URL+'/rest/v1/commands?order=created_at.desc&limit=10',{headers:SB_HDR});
     if(!r.ok)return;
     const d=await r.json();
-    d.reverse().forEach(c=>{
+    document.getElementById('n-cmds').textContent=d.length;
+    d.slice(0,5).reverse().forEach(c=>{
       const s=c.status==='done'?'sent':c.status==='error'?'fail':'pending';
-      cmdLog(`${c.command.slice(0,50)} → ${c.status}`,s);
+      cmdLog(`${c.command.slice(0,40)} → ${c.status}`,s);
     });
+    if(d.length>0&&d[0].status==='done'&&d[0].result){showResult(d[0].result);}
   }catch(e){}
 }
+
+/* === Keyboard === */
 document.getElementById('cmd-text').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendCustomCmd();}});
-function init(){render();checkAll();loadHistory();setInterval(checkAll,60000);setInterval(()=>{document.getElementById('clock').textContent=new Date().toLocaleTimeString('en-GB');},1000);}
+
+/* === Init === */
+function init(){
+  render();checkAll();checkLaptop();loadHistory();renderSaved();
+  setInterval(checkAll,60000);
+  setInterval(checkLaptop,30000);
+  setInterval(()=>{document.getElementById('clock').textContent=new Date().toLocaleTimeString('en-GB');},1000);
+}
 if(sessionStorage.getItem(SK)==='1'){document.getElementById('lock').style.display='none';document.getElementById('app').style.display='block';init();}
 </script>
 </body>
