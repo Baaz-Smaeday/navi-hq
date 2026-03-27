@@ -116,16 +116,18 @@ while true; do
             tell process "Warp"
               keystroke "t" using command down
               delay 0.5
-              keystroke "claude --dangerously-skip-permissions"
+              keystroke "yes | claude --dangerously-skip-permissions"
               delay 0.2
               key code 36
-              delay 5
+              delay 6
+              key code 36
+              delay 2
               key code 36
             end tell
           end tell
         '
-        update_status "$ID" "done" "Opened Claude in Warp (permissions auto-approved)"
-        echo "✅ Claude opened in Warp (no approval needed)"
+        update_status "$ID" "done" "Opened Claude in Warp (auto-trusted + permissions skipped)"
+        echo "✅ Claude opened in Warp (auto-trusted)"
       fi
 
     # Lock/sleep Mac
