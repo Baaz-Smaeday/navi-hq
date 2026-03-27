@@ -50,15 +50,14 @@ function initFirebase() {
 }
 
 /* ═══ AUTH ═════════════════════════════════════════════════════ */
+const ACCESS_PIN = "25784";
 function doLogin() {
-  const email = ($("#l-user") || {}).value || "", pass = ($("#l-pass") || {}).value || "";
-  if (!email || !pass) { $("#l-err").textContent = "Enter email and password."; return }
+  const pin = ($("#l-pin") || {}).value || "";
+  if (!pin) { $("#l-err").textContent = "Enter PIN."; return }
+  if (pin !== ACCESS_PIN) { $("#l-err").textContent = "Incorrect PIN."; return }
   $("#l-err").textContent = "Signing in…";
-  auth.signInWithEmailAndPassword(email, pass).catch(err => {
-    let msg = "Login failed.";
-    if (err.code === "auth/user-not-found" || err.code === "auth/wrong-password" || err.code === "auth/invalid-credential") msg = "Invalid email or password.";
-    else if (err.code === "auth/too-many-requests") msg = "Too many attempts. Try later.";
-    $("#l-err").textContent = msg;
+  auth.signInAnonymously().catch(err => {
+    $("#l-err").textContent = "Login failed.";
   });
 }
 function logout() { unsubs.forEach(fn => fn()); unsubs = []; auth.signOut() }
