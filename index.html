@@ -1,84 +1,182 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="light">
+<html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Navi HQ</title>
-  <link rel="stylesheet" href="style.css">
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><text y='24' font-size='24'>&#9881;</text></svg>">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Navi HQ</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;600;800&display=swap');
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Syne',sans-serif;background:#0a0a0a;color:#f0f0f0;min-height:100vh;padding-bottom:40px}
+#lock{position:fixed;inset:0;background:#0a0a0a;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:99;padding:32px 24px}
+.l-logo{font-size:30px;font-weight:800;letter-spacing:-1px;margin-bottom:6px}
+.l-logo span{color:#00e676}
+.l-sub{font-family:'DM Mono',monospace;font-size:11px;color:#555;margin-bottom:44px;letter-spacing:.05em}
+.l-box{width:100%;max-width:300px;background:#111;border:1px solid #222;border-radius:16px;padding:24px 20px}
+.l-label{font-family:'DM Mono',monospace;font-size:10px;color:#555;text-transform:uppercase;letter-spacing:.1em;margin-bottom:10px}
+#pin{width:100%;background:#0a0a0a;border:1px solid #2a2a2a;border-radius:10px;padding:14px 16px;color:#f0f0f0;font-family:'DM Mono',monospace;font-size:22px;letter-spacing:.3em;outline:none;margin-bottom:12px;transition:border-color .2s;text-align:center}
+#pin:focus{border-color:#00e676}
+#unlock{width:100%;background:#00e676;border:none;border-radius:10px;padding:14px;color:#000;font-family:'Syne',sans-serif;font-size:14px;font-weight:800;cursor:pointer}
+#unlock:active{opacity:.8}
+#err{font-family:'DM Mono',monospace;font-size:11px;color:#ff4d4d;text-align:center;margin-top:10px;min-height:16px}
+#app{display:none}
+header{padding:26px 20px 18px;border-bottom:1px solid #1a1a1a;display:flex;align-items:center;justify-content:space-between}
+.logo{font-size:20px;font-weight:800;letter-spacing:-.5px}
+.logo span{color:#00e676}
+.htime{font-family:'DM Mono',monospace;font-size:10px;color:#444;text-align:right;line-height:1.7;cursor:pointer}
+.stats{display:grid;grid-template-columns:1fr 1fr 1fr;gap:1px;background:#1a1a1a;border-bottom:1px solid #1a1a1a}
+.stat{background:#0e0e0e;padding:14px 0;text-align:center}
+.stat-n{font-size:28px;font-weight:800;line-height:1}
+.stat-l{font-family:'DM Mono',monospace;font-size:9px;color:#444;text-transform:uppercase;letter-spacing:.06em;margin-top:3px}
+.sh{padding:18px 20px 8px;font-family:'DM Mono',monospace;font-size:10px;color:#444;text-transform:uppercase;letter-spacing:.1em;display:flex;align-items:center;gap:8px}
+.sh::after{content:'';flex:1;height:1px;background:#1a1a1a}
+.list{padding:0 12px;display:flex;flex-direction:column;gap:7px}
+.card{background:#111;border:1px solid #1e1e1e;border-radius:12px;padding:14px 16px;display:flex;align-items:center;gap:13px;text-decoration:none;color:#f0f0f0;position:relative;overflow:hidden;transition:border-color .2s}
+.card::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;border-radius:3px 0 0 3px;background:#2a2a2a;transition:background .3s}
+.card.online::before{background:#00e676}
+.card.offline::before{background:#ff4d4d}
+.card.checking::before{background:#ffb300}
+.card.proto::before{background:#4d9fff}
+.card:active{background:#161616}
+.dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;background:#2a2a2a;transition:background .3s}
+.card.online .dot{background:#00e676;box-shadow:0 0 5px #00e676}
+.card.offline .dot{background:#ff4d4d;box-shadow:0 0 5px #ff4d4d}
+.card.checking .dot{background:#ffb300;animation:blink 1s infinite}
+.card.proto .dot{background:#4d9fff}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.2}}
+.cinfo{flex:1;min-width:0}
+.cname{font-size:15px;font-weight:600;letter-spacing:-.2px;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.curl{font-family:'DM Mono',monospace;font-size:10px;color:#444}
+.ctags{display:flex;gap:4px;margin-top:5px;flex-wrap:wrap}
+.tag{font-family:'DM Mono',monospace;font-size:9px;color:#333;background:#161616;border:1px solid #222;padding:1px 6px;border-radius:4px}
+.tag.hot{color:#ffb300;border-color:#3a2e00;background:rgba(255,179,0,.04)}
+.cmeta{text-align:right;flex-shrink:0}
+.cstatus{font-family:'DM Mono',monospace;font-size:10px;font-weight:500;padding:3px 8px;border-radius:20px;display:inline-block;margin-bottom:3px}
+.online .cstatus{background:rgba(0,230,118,.08);color:#00e676}
+.offline .cstatus{background:rgba(255,77,77,.08);color:#ff4d4d}
+.checking .cstatus{background:rgba(255,179,0,.08);color:#ffb300}
+.proto .cstatus{background:rgba(77,159,255,.08);color:#4d9fff}
+.ctime{font-family:'DM Mono',monospace;font-size:9px;color:#333}
+.btn-r{display:block;margin:16px 12px 0;width:calc(100% - 24px);background:transparent;border:1px solid #222;border-radius:10px;padding:13px;color:#f0f0f0;font-family:'Syne',sans-serif;font-size:13px;font-weight:600;cursor:pointer}
+.btn-r:active{border-color:#00e676;color:#00e676}
+.links{padding:0 12px;display:flex;flex-direction:column;gap:6px}
+.lnk{background:#111;border:1px solid #1e1e1e;border-radius:10px;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;text-decoration:none;color:#f0f0f0;font-size:13px;font-weight:600}
+.lnk:active{border-color:#00e676}
+.lnk-sub{font-family:'DM Mono',monospace;font-size:9px;color:#444;font-weight:400;margin-top:1px}
+.lnk-arr{font-family:'DM Mono',monospace;font-size:13px;color:#333}
+.btn-lk{display:block;margin:14px 12px 0;width:calc(100% - 24px);background:transparent;border:1px solid #1e1e1e;border-radius:10px;padding:11px;color:#333;font-family:'DM Mono',monospace;font-size:11px;cursor:pointer;letter-spacing:.05em}
+.btn-lk:active{border-color:#ff4d4d;color:#ff4d4d}
+.ticker{font-family:'DM Mono',monospace;font-size:10px;color:#333;padding:10px 20px;border-top:1px solid #1a1a1a;margin-top:28px;text-align:center}
+</style>
 </head>
 <body>
-
-  <div class="loading-overlay" id="loading"><div class="lo-spin"></div><div>Navi HQ</div></div>
-
-  <div class="login-bg login-hidden" id="login-screen">
-    <div class="login-box">
-      <div class="lb-logo">Navi HQ</div>
-      <div class="lb-sub">Project Status Dashboard</div>
-      <div class="lb-fg"><label>Enter PIN</label><input id="l-pin" type="password" inputmode="numeric" maxlength="4" autocomplete="off" autofocus placeholder="4-digit PIN"></div>
-      <button class="lb-btn" id="l-btn">Sign In</button>
-      <div class="lb-err" id="l-err"></div>
-    </div>
+<div id="lock">
+  <div class="l-logo">NAVI <span>HQ</span></div>
+  <div class="l-sub">project command centre</div>
+  <div class="l-box">
+    <div class="l-label">PIN</div>
+    <input id="pin" type="password" maxlength="6" placeholder="••••" inputmode="numeric" autocomplete="off"/>
+    <button id="unlock" onclick="tryUnlock()">Unlock</button>
+    <div id="err"></div>
   </div>
-
-  <div id="app-wrap" class="login-hidden">
-    <div class="gdpr">&#128274; <strong>INTERNAL SYSTEM</strong> — Confidential. GDPR & Data Protection Act 2018 apply.</div>
-    <div class="wrap">
-      <aside class="sidebar" id="sidebar">
-        <div class="sb-hd"><div class="co">Navi HQ</div><div class="sub">Project Status Dashboard</div></div>
-        <div class="sb-user">
-          <div class="su-avatar" id="su-avatar">A</div>
-          <div class="su-info"><div class="su-name" id="su-name">Admin</div><div class="su-role" id="su-role">Admin</div></div>
-          <button class="su-logout" onclick="logout()" title="Sign out">&#9211;</button>
-        </div>
-        <div class="sb-office"><select id="office-sel" onchange="officeChanged()"></select></div>
-        <nav class="sb-nav" id="sb-nav"></nav>
-        <div class="sb-ft">
-          <div class="theme-toggle" id="theme-toggle">
-            <div class="tt-opt active" data-t="light">&#9788; Light</div>
-            <div class="tt-opt" data-t="dark">&#9790; Dark</div>
-          </div>
-          <div class="sb-label">Data</div>
-          <button class="sb-btn" onclick="expJSON()">Export JSON</button>
-          <div class="sb-ver"><span class="sync-dot online" id="sync-dot"></span><span id="sync-text">Connected</span> · v10</div>
-        </div>
-      </aside>
-      <main class="main">
-        <div class="pg-hd">
-          <h1 id="pg-title">Dashboard</h1>
-          <div class="hd-meta">
-            <button class="alert-bell silent" id="alert-bell" onclick="showAlerts()" title="View alerts">&#128276;<span class="ab-count" id="ab-count" style="display:none">0</span></button>
-            <span class="hd-date" id="hd-date"></span>
-          </div>
-        </div>
-        <div class="pg-body">
-          <div id="p-dashboard" class="pg active"><div id="c-dashboard"></div></div>
-          <div id="p-employees" class="pg"><div id="c-employees"></div></div>
-          <div id="p-visa" class="pg"><div id="c-visa"></div></div>
-          <div id="p-attendance" class="pg"><div id="c-attendance"></div></div>
-          <div id="p-reporting" class="pg"><div id="c-reporting"></div></div>
-          <div id="p-vehicles" class="pg"><div id="c-vehicles"></div></div>
-          <div id="p-documents" class="pg"><div id="c-documents"></div></div>
-          <div id="p-training" class="pg"><div id="c-training"></div></div>
-          <div id="p-hrCases" class="pg"><div id="c-hrCases"></div></div>
-          <div id="p-cos" class="pg"><div id="c-cos"></div></div>
-          <div id="p-sponsorHub" class="pg"><div id="c-sponsorHub"></div></div>
-          <div id="p-reports" class="pg"><div id="c-reports"></div></div>
-          <div id="p-users" class="pg"><div id="c-users"></div></div>
-        </div>
-      </main>
-    </div>
+</div>
+<div id="app">
+  <header>
+    <div class="logo">NAVI <span>HQ</span></div>
+    <div class="htime" onclick="checkAll()"><div id="clock">--:--:--</div><div>tap to refresh</div></div>
+  </header>
+  <div class="stats">
+    <div class="stat"><div class="stat-n" id="n-live" style="color:#00e676">—</div><div class="stat-l">Live</div></div>
+    <div class="stat"><div class="stat-n" id="n-proto" style="color:#4d9fff">—</div><div class="stat-l">Building</div></div>
+    <div class="stat"><div class="stat-n" id="n-issue" style="color:#ff4d4d">—</div><div class="stat-l">Issues</div></div>
   </div>
-
-  <div class="mbg" id="mbg"><div class="mbox"><div class="mhd"><h2 id="mtitle"></h2><button class="mx" id="mx">&times;</button></div><div class="mbd" id="mbody"></div></div></div>
-  <input type="file" id="file-input" multiple style="display:none">
-  <input type="file" id="camera-input" capture="environment" accept="image/*" style="display:none">
-
-  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-storage-compat.js"></script>
-  <script>if(typeof firebase==='undefined'){window.firebase={initializeApp:function(){return{}},auth:function(){return{onAuthStateChanged:function(){},signInAnonymously:function(){return Promise.resolve()},signOut:function(){return Promise.resolve()}}},firestore:function(){return{enablePersistence:function(){return Promise.resolve()},collection:function(){return{doc:function(){return{get:function(){return Promise.resolve({exists:false})},set:function(){return Promise.resolve()},onSnapshot:function(){return function(){}}}}}}}},storage:function(){return{}}}}</script>
-  <script src="app.js"></script>
+  <div class="sh">Projects</div>
+  <div class="list" id="list"></div>
+  <button class="btn-r" onclick="checkAll()">↻ Check all projects</button>
+  <div class="sh" style="margin-top:16px">Tools</div>
+  <div class="links">
+    <a class="lnk" href="https://vercel.com/dashboard" target="_blank"><div><div>Vercel</div><div class="lnk-sub">deployments · logs</div></div><span class="lnk-arr">↗</span></a>
+    <a class="lnk" href="https://supabase.com/dashboard" target="_blank"><div><div>Supabase</div><div class="lnk-sub">databases · auth</div></div><span class="lnk-arr">↗</span></a>
+    <a class="lnk" href="https://github.com/baaz-smaeday" target="_blank"><div><div>GitHub</div><div class="lnk-sub">repos · commits</div></div><span class="lnk-arr">↗</span></a>
+    <a class="lnk" href="https://app.canva.com" target="_blank"><div><div>Canva</div><div class="lnk-sub">design assets</div></div><span class="lnk-arr">↗</span></a>
+    <a class="lnk" href="https://dashboard.stripe.com" target="_blank"><div><div>Stripe</div><div class="lnk-sub">payments · revenue</div></div><span class="lnk-arr">↗</span></a>
+  </div>
+  <button class="btn-lk" onclick="doLock()">⎋ Lock</button>
+  <div class="ticker" id="ticker">Initialising...</div>
+</div>
+<script>
+const PIN='2578',SK='nhq_ok';
+const P=[
+  {name:'ComplyFleet',   url:'https://complyfleet.co.uk',                     label:'complyfleet.co.uk', tags:['Next.js','Supabase'],hot:'Add Stripe',   type:'live'},
+  {name:'DesiMind',      url:'https://desimind.co.uk',                        label:'desimind.co.uk',    tags:['Next.js','Supabase'],hot:'Shopify token',type:'live'},
+  {name:'SIVO',          url:'https://sivohome.com',                          label:'sivohome.com',      tags:['Next.js'],           hot:null,           type:'live'},
+  {name:'UK Theory Test',url:'https://baaz-smaeday.github.io/uk-theory-test', label:'GitHub Pages',      tags:['HTML/JS'],           hot:null,           type:'live'},
+  {name:'LoadLink',      url:null,                                            label:'Not deployed yet',  tags:['React Native'],      hot:null,           type:'proto'},
+  {name:'Eagle Academy', url:null,                                            label:'Not deployed yet',  tags:['React/JS'],          hot:'Deploy needed',type:'proto'},
+  {name:'LoadBoard',     url:null,                                            label:'Not deployed yet',  tags:['React'],             hot:null,           type:'proto'},
+];
+function tryUnlock(){
+  if(document.getElementById('pin').value===PIN){
+    sessionStorage.setItem(SK,'1');
+    document.getElementById('lock').style.display='none';
+    document.getElementById('app').style.display='block';
+    init();
+  }else{
+    const e=document.getElementById('err');
+    e.textContent='Wrong PIN';
+    document.getElementById('pin').value='';
+    setTimeout(()=>e.textContent='',2000);
+  }
+}
+function doLock(){
+  sessionStorage.removeItem(SK);
+  document.getElementById('lock').style.display='flex';
+  document.getElementById('app').style.display='none';
+  document.getElementById('pin').value='';
+}
+document.getElementById('pin').addEventListener('keydown',e=>{if(e.key==='Enter')tryUnlock()});
+function render(){
+  const list=document.getElementById('list');
+  list.innerHTML='';
+  P.forEach((p,i)=>{
+    const el=document.createElement(p.url?'a':'div');
+    if(p.url){el.href=p.url;el.target='_blank';}
+    el.className='card '+(p.type==='proto'?'proto':'checking');
+    el.id='c'+i;
+    el.innerHTML=`<div class="dot"></div><div class="cinfo"><div class="cname">${p.name}</div><div class="curl">${p.label}</div><div class="ctags">${p.tags.map(t=>`<span class="tag">${t}</span>`).join('')}${p.hot?`<span class="tag hot">${p.hot}</span>`:''}</div></div><div class="cmeta"><div class="cstatus" id="s${i}">${p.type==='proto'?'building':'checking'}</div><div class="ctime" id="t${i}">${p.type==='proto'?'local only':'...'}</div></div>`;
+    list.appendChild(el);
+  });
+}
+async function ping(i){
+  const p=P[i];if(!p.url)return;
+  const card=document.getElementById('c'+i);
+  const s=document.getElementById('s'+i);
+  const t=document.getElementById('t'+i);
+  card.className='card checking';s.textContent='checking';
+  const t0=Date.now();
+  try{
+    await fetch(p.url,{method:'HEAD',mode:'no-cors',cache:'no-store'});
+    card.className='card online';s.textContent='online';t.textContent=(Date.now()-t0)+'ms';
+  }catch{
+    card.className='card offline';s.textContent='offline';t.textContent='no response';
+  }
+}
+async function checkAll(){
+  document.getElementById('ticker').textContent='Checking...';
+  const live=P.map((p,i)=>({p,i})).filter(x=>x.p.url);
+  await Promise.all(live.map(x=>ping(x.i)));
+  const on=document.querySelectorAll('.card.online').length;
+  const pr=document.querySelectorAll('.card.proto').length;
+  const off=document.querySelectorAll('.card.offline').length;
+  document.getElementById('n-live').textContent=on;
+  document.getElementById('n-proto').textContent=pr;
+  document.getElementById('n-issue').textContent=off;
+  const now=new Date();
+  document.getElementById('clock').textContent=now.toLocaleTimeString('en-GB');
+  document.getElementById('ticker').textContent=`${on}/${live.length} responding · ${now.toLocaleDateString('en-GB')}`;
+}
+function init(){render();checkAll();setInterval(checkAll,60000);setInterval(()=>{document.getElementById('clock').textContent=new Date().toLocaleTimeString('en-GB');},1000);}
+if(sessionStorage.getItem(SK)==='1'){document.getElementById('lock').style.display='none';document.getElementById('app').style.display='block';init();}
+</script>
 </body>
 </html>
