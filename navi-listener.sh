@@ -68,7 +68,7 @@ while true; do
     # === SMART COMMAND ROUTING ===
 
     # TYPE INTO ACTIVE CLAUDE SESSION — prefix with ">" or "type:" or "send:"
-    # Also runs same command via claude -p in background to capture response for phone
+    # Types into Warp, waits for Claude to respond, grabs screen text
     if echo "$CMD_LOWER" | grep -qE "^(>|type:|type |send:|send )"; then
       MSG=$(echo "$CMD" | sed -E 's/^(>|type:|type |send:|send )[[:space:]]*//')
       # Type into Warp (visual)
@@ -85,15 +85,25 @@ while true; do
         end tell
       '
       echo "✅ Typed into Warp: $MSG"
-      # Also run headless to capture result for phone
-      echo "🤖 Capturing response for phone..."
-      RESULT=$(claude -p "$MSG" --max-turns 3 2>&1 | tail -c 5000)
-      if [ $? -eq 0 ]; then
-        update_status "$ID" "done" "$RESULT"
-        echo "📤 Result captured and sent to phone"
-      else
-        update_status "$ID" "done" "Typed into Claude. Response: $RESULT"
-      fi
+      # Quick update so phone knows it was sent
+      update_status "$ID" "running" "Sent to Claude, waiting for response..."
+      # Wait for Claude to respond, then grab screen content
+      sleep 15
+      osascript -e '
+        tell application "Warp" to activate
+        delay 0.2
+        tell application "System Events"
+          tell process "Warp"
+            keystroke "a" using command down
+            delay 0.2
+            keystroke "c" using command down
+          end tell
+        end tell
+      '
+      sleep 0.5
+      SCREEN=$(pbpaste | tail -30 | head -c 3000)
+      update_status "$ID" "done" "$SCREEN"
+      echo "📤 Screen captured and sent to phone"
 
     # Open apps
     elif echo "$CMD_LOWER" | grep -qE "^open (chrome|google chrome|browser)"; then
@@ -207,7 +217,7 @@ APPLESCRIPT
     # Run Claude Code (visible in this terminal)
     else
       echo "🤖 Running Claude Code..."
-      RESULT=$(claude -p "$CMD" --max-turns 5 2>&1 | tail -c 5000)
+      RESULT=$(claude -p "$CMD" --max-turns 2 2>&1 | tail -c 3000)
       if [ $? -eq 0 ]; then
         update_status "$ID" "done" "$RESULT"
         echo "✅ Done"
