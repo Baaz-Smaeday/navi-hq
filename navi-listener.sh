@@ -217,7 +217,7 @@ APPLESCRIPT
     # Run Claude Code (visible in this terminal)
     else
       echo "🤖 Running Claude Code..."
-      RESULT=$(claude -p "$CMD" --max-turns 2 2>&1 | tail -c 3000)
+      RESULT=$(claude -p "$CMD" --max-turns 10 2>&1 | tail -c 3000)
       if [ $? -eq 0 ]; then
         update_status "$ID" "done" "$RESULT"
         echo "✅ Done"
