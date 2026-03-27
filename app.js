@@ -56,18 +56,17 @@ function doLogin() {
   if (!pin) { $("#l-err").textContent = "Enter PIN."; return }
   if (pin !== ACCESS_PIN) { $("#l-err").textContent = "Incorrect PIN."; return }
   $("#l-err").textContent = "Signing in…";
-  auth.signInAnonymously().catch(err => {
-    $("#l-err").textContent = "Login failed.";
-  });
+  CU = { uid: "local-admin", email: "admin@navihq.local" };
+  CUDoc = { id: "local-admin", displayName: "Admin", role: "admin", employeeId: "", office: "OFF01" };
+  sessionStorage.setItem("navi-pin-auth", "true");
+  showApp();
 }
-function logout() { unsubs.forEach(fn => fn()); unsubs = []; auth.signOut() }
+function logout() { unsubs.forEach(fn => fn()); unsubs = []; sessionStorage.removeItem("navi-pin-auth"); CU = null; CUDoc = null; $("#loading").classList.add("login-hidden"); $("#app-wrap").classList.add("login-hidden"); $("#login-screen").classList.remove("login-hidden"); }
 function onAuthChange(user) {
-  if (user) {
-    CU = user;
-    db.collection("users").doc(user.uid).get().then(doc => {
-      if (doc.exists) { CUDoc = { id: user.uid, ...doc.data() }; showApp() }
-      else { CUDoc = { id: user.uid, displayName: user.email, role: "admin", employeeId: "", office: "OFF01" }; db.collection("users").doc(user.uid).set(CUDoc).then(() => showApp()) }
-    }).catch(e => { console.error(e); $("#l-err").textContent = "Error loading profile." });
+  if (user || sessionStorage.getItem("navi-pin-auth")) {
+    if (!CU) { CU = user || { uid: "local-admin", email: "admin@navihq.local" }; }
+    if (!CUDoc) { CUDoc = { id: CU.uid, displayName: "Admin", role: "admin", employeeId: "", office: "OFF01" }; }
+    showApp();
   } else {
     CU = null; CUDoc = null;
     $("#loading").classList.add("login-hidden");
