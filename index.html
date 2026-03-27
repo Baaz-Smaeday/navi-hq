@@ -173,6 +173,16 @@ header{padding:26px 20px 18px;border-bottom:1px solid #1a1a1a;display:flex;align
     <div class="rc-btn" onclick="sendCmd('lock')"><div class="rc-ico">&#128274;</div>Lock Mac</div>
     <div class="rc-btn" onclick="sendCmd('open https://claude.ai/code')"><div class="rc-ico">&#9889;</div>Claude Web</div>
   </div>
+  <div class="sh" style="margin-top:12px">Type into Claude <span class="sh-count">live</span></div>
+  <div style="padding:0 12px">
+    <div class="cmd-box" style="margin:0">
+      <div style="font-family:'DM Mono',monospace;font-size:9px;color:#444;margin-bottom:4px">Types directly into the open Claude chat in Warp</div>
+      <div class="cmd-row">
+        <textarea class="cmd-input" id="type-text" placeholder="Type message for Claude chat..." rows="2"></textarea>
+      </div>
+      <button class="cmd-send" style="width:100%" onclick="typeToWarp()">Type into Warp</button>
+    </div>
+  </div>
 
   <div class="sh" style="margin-top:16px">Quick Commands</div>
   <div class="saved-grid" id="saved-grid"></div>
@@ -448,6 +458,15 @@ async function loadHistory(){
     if(d.length>0&&d[0].status==='done'&&d[0].result){showResult(d[0].result);}
   }catch(e){}
 }
+
+/* === Type into Warp === */
+async function typeToWarp(){
+  const txt=document.getElementById('type-text').value.trim();
+  if(!txt)return;
+  await sendCmd('> '+txt);
+  document.getElementById('type-text').value='';
+}
+document.getElementById('type-text').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();typeToWarp();}});
 
 /* === Keyboard === */
 document.getElementById('cmd-text').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendCustomCmd();}});
