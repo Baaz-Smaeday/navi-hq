@@ -68,42 +68,27 @@ while true; do
     # === SMART COMMAND ROUTING ===
 
     # TYPE INTO ACTIVE CLAUDE SESSION — prefix with ">" or "type:" or "send:"
-    # Types into Warp, waits for Claude to respond, grabs screen text
+    # Switches to LAST Warp tab (Claude chat), pastes message, sends instantly
     if echo "$CMD_LOWER" | grep -qE "^(>|type:|type |send:|send )"; then
       MSG=$(echo "$CMD" | sed -E 's/^(>|type:|type |send:|send )[[:space:]]*//')
-      # Type into Warp (visual)
       echo -n "$MSG" | pbcopy
       osascript -e '
         tell application "Warp" to activate
         delay 0.3
         tell application "System Events"
           tell process "Warp"
+            -- Cmd+9 switches to last tab (where Claude chat should be)
+            keystroke "9" using command down
+            delay 0.5
             keystroke "v" using command down
             delay 0.2
             key code 36
           end tell
         end tell
       '
-      echo "✅ Typed into Warp: $MSG"
-      # Quick update so phone knows it was sent
-      update_status "$ID" "running" "Sent to Claude, waiting for response..."
-      # Wait for Claude to respond, then grab screen content
-      sleep 15
-      osascript -e '
-        tell application "Warp" to activate
-        delay 0.2
-        tell application "System Events"
-          tell process "Warp"
-            keystroke "a" using command down
-            delay 0.2
-            keystroke "c" using command down
-          end tell
-        end tell
-      '
-      sleep 0.5
-      SCREEN=$(pbpaste | tail -30 | head -c 3000)
-      update_status "$ID" "done" "$SCREEN"
-      echo "📤 Screen captured and sent to phone"
+      echo "✅ Typed into Claude tab: $MSG"
+      update_status "$ID" "done" "Sent to Claude: $MSG — check Warp for response"
+      echo "📤 Done"
 
     # Open apps
     elif echo "$CMD_LOWER" | grep -qE "^open (chrome|google chrome|browser)"; then
