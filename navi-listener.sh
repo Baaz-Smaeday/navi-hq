@@ -54,8 +54,25 @@ while true; do
 
     # === SMART COMMAND ROUTING ===
 
+    # TYPE INTO ACTIVE CLAUDE SESSION — prefix with ">" or "type:" or "send:"
+    if echo "$CMD_LOWER" | grep -qE "^(>|type:|type |send:|send )"; then
+      MSG=$(echo "$CMD" | sed -E 's/^(>|type:|type |send:|send )[[:space:]]*//')
+      osascript -e "
+        tell application \"Warp\" to activate
+        delay 0.3
+        tell application \"System Events\"
+          tell process \"Warp\"
+            keystroke \"$MSG\"
+            delay 0.2
+            key code 36
+          end tell
+        end tell
+      "
+      update_status "$ID" "done" "Typed into Claude: $MSG"
+      echo "✅ Typed into active Claude session: $MSG"
+
     # Open apps
-    if echo "$CMD_LOWER" | grep -qE "^open (chrome|google chrome|browser)"; then
+    elif echo "$CMD_LOWER" | grep -qE "^open (chrome|google chrome|browser)"; then
       open -a "Google Chrome"
       update_status "$ID" "done" "Opened Google Chrome"
       echo "✅ Opened Chrome"
@@ -85,23 +102,6 @@ while true; do
       open "$URL"
       update_status "$ID" "done" "Opened $URL in browser"
       echo "✅ Opened $URL"
-
-    # TYPE INTO ACTIVE CLAUDE SESSION — prefix with ">" or "type:"
-    if echo "$CMD_LOWER" | grep -qE "^(>|type:|type |send:|send )"; then
-      MSG=$(echo "$CMD" | sed -E 's/^(>|type:|type |send:|send )[[:space:]]*//')
-      osascript -e "
-        tell application \"Warp\" to activate
-        delay 0.3
-        tell application \"System Events\"
-          tell process \"Warp\"
-            keystroke \"$MSG\"
-            delay 0.2
-            key code 36
-          end tell
-        end tell
-      "
-      update_status "$ID" "done" "Typed into Claude: $MSG"
-      echo "✅ Typed into active Claude session: $MSG"
 
     # New Claude Code chat in Warp — opens with --dangerously-skip-permissions so no approval needed from phone
     elif echo "$CMD_LOWER" | grep -qE "(new claude|start claude|open claude|claude chat|new chat)"; then
