@@ -152,6 +152,20 @@ APPLESCRIPT
         echo "✅ Claude opened in Warp (fully auto-accepted)"
       fi
 
+    # Close Warp / close Claude
+    elif echo "$CMD_LOWER" | grep -qE "(close warp|quit warp|close claude|exit claude|kill claude)"; then
+      osascript -e '
+        tell application "System Events"
+          if exists process "Warp" then
+            tell process "Warp"
+              keystroke "w" using command down
+            end tell
+          end if
+        end tell
+      '
+      update_status "$ID" "done" "Closed active Warp tab"
+      echo "✅ Closed Warp tab"
+
     # Lock/sleep Mac
     elif echo "$CMD_LOWER" | grep -qE "^(lock|sleep|lock screen)"; then
       pmset displaysleepnow
