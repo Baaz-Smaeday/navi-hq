@@ -152,7 +152,7 @@ header{padding:26px 20px 18px;border-bottom:1px solid #1a1a1a;display:flex;align
         <option value="accuportal-backend">AccuPortal</option>
         <option value="uk-cartheory-classroom">Car Theory Classroom</option>
       </select>
-      <button class="cmd-send" id="cmd-go" onclick="sendCustomCmd()">Open in Claude</button>
+      <button class="cmd-send" id="cmd-go" onclick="sendCustomCmd()">Send to Laptop</button>
     </div>
     <div class="cmd-log" id="cmd-log"></div>
   </div>
@@ -239,8 +239,11 @@ async function checkAll(){
   document.getElementById('clock').textContent=now.toLocaleTimeString('en-GB');
   document.getElementById('ticker').textContent=`${on}/${live.length} responding · ${now.toLocaleDateString('en-GB')}`;
 }
-/* === Command Centre — opens claude.ai/code (free with Max plan) === */
-const CLAUDE_URL='https://claude.ai/code';
+/* === Command Centre — Supabase Relay to laptop Claude Code === */
+const SB_URL='https://nibemnomfzflvpnlfgbh.supabase.co';
+const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5pYmVtbm9tZnpmbHZwbmxmZ2JoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQyOTMzNzYsImV4cCI6MjA4OTg2OTM3Nn0.0gQPv67Bh5Fh1PocqENfPCm-dWQDe41886VfLUgQhuM';
+const SB_HDR={'Content-Type':'application/json','apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY};
+
 function cmdLog(msg,cls){
   const log=document.getElementById('cmd-log');
   log.classList.add('active');
@@ -249,21 +252,58 @@ function cmdLog(msg,cls){
   d.innerHTML=`<span style="color:#333">${now}</span> ${msg}`;
   log.prepend(d);
 }
-function sendCmd(cmd){
-  cmdLog(`Opening Claude: "${cmd.slice(0,40)}..."`,`sent`);
-  window.open(CLAUDE_URL,'_blank');
+async function sendCmd(cmd){
+  cmdLog(`Sending: "${cmd.slice(0,40)}..."`,`pending`);
+  try{
+    const r=await fetch(SB_URL+'/rest/v1/commands',{method:'POST',headers:{...SB_HDR,'Prefer':'return=representation'},body:JSON.stringify({command:cmd,project:'general'})});
+    if(r.ok){cmdLog('Sent to laptop — waiting for Claude...','sent');pollResults();}
+    else{cmdLog('Failed to send','fail');}
+  }catch(e){cmdLog('Network error','fail');}
 }
-function sendCustomCmd(){
+async function sendCustomCmd(){
   const txt=document.getElementById('cmd-text').value.trim();
-  if(!txt){return;}
+  if(!txt)return;
   const proj=document.getElementById('cmd-project').value;
-  const full=proj!=='general'?`[Project: ${proj}] ${txt}`:txt;
-  cmdLog(`Command: "${full.slice(0,50)}${full.length>50?'...':''}"`,`sent`);
-  window.open(CLAUDE_URL,'_blank');
+  const cmd=proj!=='general'?`[Project: ${proj}] ${txt}`:txt;
+  cmdLog(`Sending: "${cmd.slice(0,50)}${cmd.length>50?'...':''}"`,`pending`);
+  try{
+    const r=await fetch(SB_URL+'/rest/v1/commands',{method:'POST',headers:{...SB_HDR,'Prefer':'return=representation'},body:JSON.stringify({command:cmd,project:proj})});
+    if(r.ok){cmdLog('Sent to laptop — waiting for Claude...','sent');pollResults();}
+    else{cmdLog('Failed to send','fail');}
+  }catch(e){cmdLog('Network error','fail');}
   document.getElementById('cmd-text').value='';
 }
+async function pollResults(){
+  const poll=setInterval(async()=>{
+    try{
+      const r=await fetch(SB_URL+'/rest/v1/commands?status=eq.done&order=completed_at.desc&limit=1',{headers:SB_HDR});
+      if(!r.ok)return;
+      const d=await r.json();
+      if(d.length>0){
+        const latest=d[0];
+        const ago=Math.round((Date.now()-new Date(latest.completed_at))/1000);
+        if(ago<120){
+          cmdLog(`Result: ${(latest.result||'Done').slice(0,200)}`,'sent');
+          clearInterval(poll);
+        }
+      }
+    }catch(e){}
+  },5000);
+  setTimeout(()=>clearInterval(poll),300000);
+}
+async function loadHistory(){
+  try{
+    const r=await fetch(SB_URL+'/rest/v1/commands?order=created_at.desc&limit=5',{headers:SB_HDR});
+    if(!r.ok)return;
+    const d=await r.json();
+    d.reverse().forEach(c=>{
+      const s=c.status==='done'?'sent':c.status==='error'?'fail':'pending';
+      cmdLog(`${c.command.slice(0,50)} → ${c.status}`,s);
+    });
+  }catch(e){}
+}
 document.getElementById('cmd-text').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendCustomCmd();}});
-function init(){render();checkAll();setInterval(checkAll,60000);setInterval(()=>{document.getElementById('clock').textContent=new Date().toLocaleTimeString('en-GB');},1000);}
+function init(){render();checkAll();loadHistory();setInterval(checkAll,60000);setInterval(()=>{document.getElementById('clock').textContent=new Date().toLocaleTimeString('en-GB');},1000);}
 if(sessionStorage.getItem(SK)==='1'){document.getElementById('lock').style.display='none';document.getElementById('app').style.display='block';init();}
 </script>
 </body>
