@@ -66,6 +66,31 @@ header{padding:26px 20px 18px;border-bottom:1px solid #1a1a1a;display:flex;align
 .lnk-arr{font-family:'DM Mono',monospace;font-size:13px;color:#333}
 .btn-lk{display:block;margin:14px 12px 0;width:calc(100% - 24px);background:transparent;border:1px solid #1e1e1e;border-radius:10px;padding:11px;color:#333;font-family:'DM Mono',monospace;font-size:11px;cursor:pointer;letter-spacing:.05em}
 .btn-lk:active{border-color:#ff4d4d;color:#ff4d4d}
+.cmd-box{margin:0 12px;background:#111;border:1px solid #1e1e1e;border-radius:12px;padding:16px;display:flex;flex-direction:column;gap:10px}
+.cmd-input{width:100%;background:#0a0a0a;border:1px solid #2a2a2a;border-radius:10px;padding:12px 14px;color:#f0f0f0;font-family:'DM Mono',monospace;font-size:13px;outline:none;resize:none;min-height:44px}
+.cmd-input:focus{border-color:#00e676}
+.cmd-input::placeholder{color:#333}
+.cmd-row{display:flex;gap:6px}
+.cmd-send{flex:1;background:#00e676;border:none;border-radius:8px;padding:11px;color:#000;font-family:'Syne',sans-serif;font-size:13px;font-weight:800;cursor:pointer}
+.cmd-send:active{opacity:.8}
+.cmd-send:disabled{opacity:.4;cursor:not-allowed}
+.cmd-sel{flex:1;background:#0a0a0a;border:1px solid #2a2a2a;border-radius:8px;padding:11px;color:#f0f0f0;font-family:'DM Mono',monospace;font-size:11px;outline:none}
+.qk-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.qk-btn{background:#161616;border:1px solid #222;border-radius:8px;padding:10px 8px;color:#f0f0f0;font-family:'DM Mono',monospace;font-size:10px;cursor:pointer;text-align:left;line-height:1.3}
+.qk-btn:active{border-color:#00e676;color:#00e676}
+.qk-ico{font-size:14px;margin-bottom:3px}
+.cmd-log{background:#0a0a0a;border:1px solid #1a1a1a;border-radius:8px;padding:10px 12px;font-family:'DM Mono',monospace;font-size:10px;color:#444;max-height:150px;overflow-y:auto;display:none}
+.cmd-log.active{display:block}
+.cmd-log .entry{padding:4px 0;border-bottom:1px solid #111}
+.cmd-log .entry:last-child{border:none}
+.cmd-log .sent{color:#00e676}
+.cmd-log .fail{color:#ff4d4d}
+.cmd-log .pending{color:#ffb300}
+.cmd-setup{background:#111;border:1px solid #1e1e1e;border-radius:10px;padding:12px 16px;margin:0 12px}
+.cmd-setup label{font-family:'DM Mono',monospace;font-size:10px;color:#555;text-transform:uppercase;letter-spacing:.1em;display:block;margin-bottom:6px}
+.cmd-setup input{width:100%;background:#0a0a0a;border:1px solid #2a2a2a;border-radius:8px;padding:10px 12px;color:#f0f0f0;font-family:'DM Mono',monospace;font-size:11px;outline:none}
+.cmd-setup input:focus{border-color:#00e676}
+.cmd-setup .hint{font-family:'DM Mono',monospace;font-size:9px;color:#333;margin-top:6px}
 .ticker{font-family:'DM Mono',monospace;font-size:10px;color:#333;padding:10px 20px;border-top:1px solid #1a1a1a;margin-top:28px;text-align:center}
 </style>
 </head>
@@ -100,6 +125,35 @@ header{padding:26px 20px 18px;border-bottom:1px solid #1a1a1a;display:flex;align
     <a class="lnk" href="https://github.com/baaz-smaeday" target="_blank"><div><div>GitHub</div><div class="lnk-sub">repos · commits</div></div><span class="lnk-arr">↗</span></a>
     <a class="lnk" href="https://app.canva.com" target="_blank"><div><div>Canva</div><div class="lnk-sub">design assets</div></div><span class="lnk-arr">↗</span></a>
     <a class="lnk" href="https://dashboard.stripe.com" target="_blank"><div><div>Stripe</div><div class="lnk-sub">payments · revenue</div></div><span class="lnk-arr">↗</span></a>
+  </div>
+  <div class="sh" style="margin-top:16px">Command Centre</div>
+  <div class="cmd-box">
+    <div class="qk-grid">
+      <button class="qk-btn" onclick="sendCmd('Check all project health and report status')"><div class="qk-ico">&#9889;</div>Health Check</button>
+      <button class="qk-btn" onclick="sendCmd('Run git status on all projects and report changes')"><div class="qk-ico">&#128269;</div>Git Status</button>
+      <button class="qk-btn" onclick="sendCmd('List any build errors or failing tests across projects')"><div class="qk-ico">&#128295;</div>Check Errors</button>
+      <button class="qk-btn" onclick="sendCmd('Show deployment status for all Vercel and GitHub Pages projects')"><div class="qk-ico">&#128640;</div>Deploy Status</button>
+    </div>
+    <textarea class="cmd-input" id="cmd-text" placeholder="Type a command for Claude..." rows="2"></textarea>
+    <div class="cmd-row">
+      <select class="cmd-sel" id="cmd-project">
+        <option value="general">All Projects</option>
+        <option value="complyfleet">ComplyFleet</option>
+        <option value="desimind">DesiMind</option>
+        <option value="sivo">SIVO</option>
+        <option value="uk-theory-test">UK Theory Test</option>
+        <option value="loadlink">LoadLink</option>
+        <option value="eagle-academy">Eagle Academy</option>
+        <option value="loadboard">LoadBoard</option>
+      </select>
+      <button class="cmd-send" id="cmd-go" onclick="sendCustomCmd()">Send</button>
+    </div>
+    <div class="cmd-log" id="cmd-log"></div>
+  </div>
+  <div class="cmd-setup" id="cmd-setup">
+    <label>GitHub Token (stored locally on this device only)</label>
+    <input type="password" id="gh-token" placeholder="ghp_xxxx or github_pat_xxxx" oninput="saveToken(this.value)"/>
+    <div class="hint">Fine-grained PAT with Actions:write on baaz-smaeday/navi-hq. Never leaves your phone.</div>
   </div>
   <button class="btn-lk" onclick="doLock()">⎋ Lock</button>
   <div class="ticker" id="ticker">Initialising...</div>
@@ -175,7 +229,58 @@ async function checkAll(){
   document.getElementById('clock').textContent=now.toLocaleTimeString('en-GB');
   document.getElementById('ticker').textContent=`${on}/${live.length} responding · ${now.toLocaleDateString('en-GB')}`;
 }
-function init(){render();checkAll();setInterval(checkAll,60000);setInterval(()=>{document.getElementById('clock').textContent=new Date().toLocaleTimeString('en-GB');},1000);}
+/* === Command Centre === */
+const GH_OWNER='Baaz-Smaeday',GH_REPO='navi-hq',TK_KEY='nhq_gh_token';
+function saveToken(v){localStorage.setItem(TK_KEY,v.trim())}
+function getToken(){return localStorage.getItem(TK_KEY)||''}
+function initToken(){const t=getToken();if(t)document.getElementById('gh-token').value=t;}
+function cmdLog(msg,cls){
+  const log=document.getElementById('cmd-log');
+  log.classList.add('active');
+  const d=document.createElement('div');d.className='entry '+(cls||'');
+  const now=new Date().toLocaleTimeString('en-GB');
+  d.innerHTML=`<span style="color:#333">${now}</span> ${msg}`;
+  log.prepend(d);
+}
+async function triggerWorkflow(command,project){
+  const token=getToken();
+  if(!token){cmdLog('Set GitHub token first','fail');document.getElementById('gh-token').focus();return false;}
+  cmdLog(`Sending: "${command.slice(0,50)}${command.length>50?'...':''}"`,`pending`);
+  try{
+    const r=await fetch(`https://api.github.com/repos/${GH_OWNER}/${GH_REPO}/actions/workflows/claude-command.yml/dispatches`,{
+      method:'POST',
+      headers:{'Authorization':`token ${token}`,'Accept':'application/vnd.github+json','Content-Type':'application/json'},
+      body:JSON.stringify({ref:'main',inputs:{command:command,project:project||'general'}})
+    });
+    if(r.status===204){cmdLog('Command sent — running in GitHub Actions','sent');return true;}
+    else{const j=await r.json().catch(()=>({}));cmdLog(`Failed: ${j.message||r.status}`,'fail');return false;}
+  }catch(e){cmdLog('Network error: '+e.message,'fail');return false;}
+}
+function sendCmd(cmd){triggerWorkflow(cmd,'general')}
+function sendCustomCmd(){
+  const txt=document.getElementById('cmd-text').value.trim();
+  if(!txt)return;
+  const proj=document.getElementById('cmd-project').value;
+  triggerWorkflow(txt,proj);
+  document.getElementById('cmd-text').value='';
+}
+document.getElementById('cmd-text').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendCustomCmd();}});
+async function checkRuns(){
+  const token=getToken();if(!token)return;
+  try{
+    const r=await fetch(`https://api.github.com/repos/${GH_OWNER}/${GH_REPO}/actions/runs?per_page=3`,{headers:{'Authorization':`token ${token}`,'Accept':'application/vnd.github+json'}});
+    if(!r.ok)return;
+    const d=await r.json();
+    (d.workflow_runs||[]).forEach(run=>{
+      if(run.name==='Claude Command'){
+        const s=run.status==='completed'?(run.conclusion==='success'?'sent':'fail'):'pending';
+        const ago=Math.round((Date.now()-new Date(run.created_at))/60000);
+        if(ago<10)cmdLog(`Run #${run.run_number}: ${run.status}${run.conclusion?' ('+run.conclusion+')':''}`,s);
+      }
+    });
+  }catch(e){}
+}
+function init(){render();checkAll();initToken();setInterval(checkAll,60000);setInterval(()=>{document.getElementById('clock').textContent=new Date().toLocaleTimeString('en-GB');},1000);}
 if(sessionStorage.getItem(SK)==='1'){document.getElementById('lock').style.display='none';document.getElementById('app').style.display='block';init();}
 </script>
 </body>
