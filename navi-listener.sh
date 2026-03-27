@@ -86,25 +86,47 @@ while true; do
       update_status "$ID" "done" "Opened $URL in browser"
       echo "✅ Opened $URL"
 
-    # New Claude Code chat in Warp
+    # New Claude Code chat in Warp — opens with --dangerously-skip-permissions so no approval needed from phone
     elif echo "$CMD_LOWER" | grep -qE "(new claude|start claude|open claude|claude chat|new chat)"; then
-      osascript -e '
-        tell application "Warp" to activate
-        delay 0.5
-        tell application "System Events"
-          tell process "Warp"
-            keystroke "t" using command down
-            delay 0.5
-            keystroke "claude"
-            delay 0.2
-            key code 36
-            delay 5
-            key code 36
+      # Extract any message after "new claude chat: <message>"
+      MSG=$(echo "$CMD" | sed -E 's/.*(new claude|start claude|open claude|claude chat|new chat)[[:space:]]*//' | sed 's/^[[:space:]]*//')
+      if [ -n "$MSG" ] && [ "$MSG" != "$CMD" ]; then
+        # Has a follow-up message — run it headless and show in Warp
+        osascript -e "
+          tell application \"Warp\" to activate
+          delay 0.3
+          tell application \"System Events\"
+            tell process \"Warp\"
+              keystroke \"t\" using command down
+              delay 0.3
+              keystroke \"claude -p \\\"${MSG}\\\"\"
+              delay 0.2
+              key code 36
+            end tell
           end tell
-        end tell
-      '
-      update_status "$ID" "done" "Opened new Claude Code chat in Warp (auto-accepted trust)"
-      echo "✅ New Claude chat opened in Warp (auto-pressed Enter)"
+        "
+        update_status "$ID" "done" "Running Claude in Warp: $MSG"
+        echo "✅ Running Claude command in Warp"
+      else
+        # Just open interactive Claude — auto-accept trust
+        osascript -e '
+          tell application "Warp" to activate
+          delay 0.5
+          tell application "System Events"
+            tell process "Warp"
+              keystroke "t" using command down
+              delay 0.5
+              keystroke "claude --dangerously-skip-permissions"
+              delay 0.2
+              key code 36
+              delay 5
+              key code 36
+            end tell
+          end tell
+        '
+        update_status "$ID" "done" "Opened Claude in Warp (permissions auto-approved)"
+        echo "✅ Claude opened in Warp (no approval needed)"
+      fi
 
     # Lock/sleep Mac
     elif echo "$CMD_LOWER" | grep -qE "^(lock|sleep|lock screen)"; then
