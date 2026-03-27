@@ -48,7 +48,7 @@ function initFirebase() {
 }
 
 /* ═══ AUTH ═════════════════════════════════════════════════════ */
-const ACCESS_PIN = "25784";
+const ACCESS_PIN = "2578";
 function doLogin() {
   const pin = ($("#l-pin") || {}).value || "";
   if (!pin) { $("#l-err").textContent = "Enter PIN."; return }
