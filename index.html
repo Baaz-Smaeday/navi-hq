@@ -422,15 +422,15 @@ function startPolling(){
       if(d.length>0){
         const c=d[0],ago=Math.round((Date.now()-new Date(c.completed_at))/1000);
         if(ago<120){
-          cmdLog(`Result: ${(c.result||'Done').slice(0,150)}`,c.status==='done'?'sent':'fail');
+          cmdLog(`Result: ${(c.result||'Done').slice(0,300)}`,c.status==='done'?'sent':'fail');
           showResult(c.result||'Done',c.completed_at);
           checkLaptop();
           clearInterval(pollTimer);pollTimer=null;
         }
       }
     }catch(e){}
-    if(checks>60){clearInterval(pollTimer);pollTimer=null;document.getElementById('rp-spinner').style.display='none';}
-  },5000);
+    if(checks>120){clearInterval(pollTimer);pollTimer=null;document.getElementById('rp-spinner').style.display='none';}
+  },2000);
 }
 function showResult(text,timestamp){
   const p=document.getElementById('result-panel'),b=document.getElementById('result-body'),ts=document.getElementById('rp-time'),sp=document.getElementById('rp-spinner');

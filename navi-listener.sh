@@ -68,8 +68,10 @@ while true; do
     # === SMART COMMAND ROUTING ===
 
     # TYPE INTO ACTIVE CLAUDE SESSION — prefix with ">" or "type:" or "send:"
+    # Also runs same command via claude -p in background to capture response for phone
     if echo "$CMD_LOWER" | grep -qE "^(>|type:|type |send:|send )"; then
       MSG=$(echo "$CMD" | sed -E 's/^(>|type:|type |send:|send )[[:space:]]*//')
+      # Type into Warp (visual)
       echo -n "$MSG" | pbcopy
       osascript -e '
         tell application "Warp" to activate
@@ -82,8 +84,16 @@ while true; do
           end tell
         end tell
       '
-      update_status "$ID" "done" "Typed into Claude: $MSG"
-      echo "✅ Typed into active Claude session: $MSG"
+      echo "✅ Typed into Warp: $MSG"
+      # Also run headless to capture result for phone
+      echo "🤖 Capturing response for phone..."
+      RESULT=$(claude -p "$MSG" --max-turns 3 2>&1 | tail -c 5000)
+      if [ $? -eq 0 ]; then
+        update_status "$ID" "done" "$RESULT"
+        echo "📤 Result captured and sent to phone"
+      else
+        update_status "$ID" "done" "Typed into Claude. Response: $RESULT"
+      fi
 
     # Open apps
     elif echo "$CMD_LOWER" | grep -qE "^open (chrome|google chrome|browser)"; then
