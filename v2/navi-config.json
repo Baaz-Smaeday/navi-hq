@@ -1,0 +1,125 @@
+{
+  "supabase_url": "https://nibemnomfzflvpnlfgbh.supabase.co",
+  "supabase_anon_key": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5pYmVtbm9tZnpmbHZwbmxmZ2JoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQyOTMzNzYsImV4cCI6MjA4OTg2OTM3Nn0.0gQPv67Bh5Fh1PocqENfPCm-dWQDe41886VfLUgQhuM",
+  "shared_secret": "navi_2024_xk9m",
+  "listener_id": "laptop-Sifats-MBP-63919",
+  "default_tool": "claude-code",
+  "projects": {
+    "complyfleet": {
+      "name": "ComplyFleet",
+      "dir": "/Users/sifatdad/Desktop/complyfleet",
+      "url": "https://complyfleet.co.uk",
+      "tags": [
+        "Next.js",
+        "Supabase"
+      ],
+      "quick_actions": [
+        "git status",
+        "run tests",
+        "deploy"
+      ]
+    },
+    "desimind": {
+      "name": "DesiMind",
+      "dir": "/Users/sifatdad/desimind",
+      "url": "https://desimind.co.uk",
+      "tags": [
+        "Next.js",
+        "Supabase"
+      ],
+      "quick_actions": [
+        "git status",
+        "run tests"
+      ]
+    },
+    "xeagle-booking": {
+      "name": "XEagle Booking",
+      "dir": "/Users/sifatdad/xeagle-booking",
+      "url": null,
+      "tags": [
+        "Courier",
+        "React"
+      ],
+      "quick_actions": [
+        "git status",
+        "run tests"
+      ]
+    },
+    "eagle-academy": {
+      "name": "Eagle Academy",
+      "dir": "/Users/sifatdad/Documents/Eagle Academy",
+      "url": null,
+      "tags": [
+        "React",
+        "Education"
+      ],
+      "quick_actions": [
+        "git status",
+        "run tests"
+      ]
+    },
+    "loadlink": {
+      "name": "LoadLink",
+      "dir": "/Users/sifatdad/LoadLink",
+      "url": null,
+      "tags": [
+        "React Native"
+      ],
+      "quick_actions": [
+        "git status",
+        "run tests"
+      ]
+    },
+    "baaz-delivery": {
+      "name": "Baaz Delivery CMS",
+      "dir": "/Users/sifatdad/Repo Rutiva/Baaz-Delivery-CMS",
+      "url": null,
+      "tags": [
+        "CMS"
+      ],
+      "quick_actions": [
+        "git status"
+      ]
+    },
+    "navi-hq": {
+      "name": "Navi HQ",
+      "dir": "/Users/sifatdad/Projects/navi-hq",
+      "url": "https://baaz-smaeday.github.io/navi-hq/",
+      "tags": [
+        "Dashboard"
+      ],
+      "quick_actions": [
+        "git status"
+      ]
+    }
+  },
+  "tools": {
+    "claude-code": {
+      "type": "cli",
+      "command": "claude",
+      "flags": "--max-turns 10"
+    },
+    "cursor": {
+      "type": "applescript",
+      "app": "Cursor",
+      "shortcut": "Cmd+L"
+    },
+    "shell": {
+      "type": "direct"
+    },
+    "copilot": {
+      "type": "applescript",
+      "app": "Visual Studio Code",
+      "shortcut": "Cmd+Shift+P"
+    }
+  },
+  "mac_actions": {
+    "open chrome": "open -a 'Google Chrome'",
+    "open safari": "open -a 'Safari'",
+    "open warp": "open -a 'Warp'",
+    "open finder": "open -a 'Finder'",
+    "open vscode": "open -a 'Visual Studio Code'",
+    "lock": "pmset displaysleepnow",
+    "screenshot": "screencapture -x ~/Desktop/navi-screenshot-$(date +%s).png"
+  }
+}

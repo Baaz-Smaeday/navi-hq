@@ -498,7 +498,7 @@ async function loadHistory(){
       const s=c.status==='done'?'sent':c.status==='error'?'fail':'pending';
       cmdLog(`${c.command.slice(0,40)} → ${c.status}`,s);
     });
-    if(d.length>0&&d[0].status==='done'&&d[0].result){showResult(d[0].result,d[0].completed_at);}
+    if(d.length>0&&d[0].status==='done'&&d[0].result){lastResultId=d[0].id;showResult(d[0].result,d[0].completed_at);}
   }catch(e){}
 }
 
