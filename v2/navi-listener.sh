@@ -515,11 +515,32 @@ route_command() {
     return
   fi
 
-  # TYPE INTO EXISTING WARP SESSION
+  # TYPE INTO EXISTING WARP SESSION (project-aware)
   if echo "$cmd_lower" | grep -qE "^(>|type:|type |send:|send )"; then
     local msg; msg=$(echo "$cmd" | sed -E 's/^(>|type:|type |send:|send )[[:space:]]*//')
-    type_into_warp "$msg"
-    update_status "$id" "done" "Typed into Warp: $msg"
+    if [ "$project" != "general" ] && [ -n "$project" ]; then
+      local project_dir; project_dir=$(get_project_dir "$project")
+      [ -z "$project_dir" ] || [ ! -d "$project_dir" ] && project_dir="$HOME"
+      smart_warp_route "$project" "$project_dir" "$msg"
+      update_status "$id" "done" "Sent to Claude in $project: $msg"
+    else
+      # No project specified — type into the last active Warp tab
+      echo -n "$msg" | pbcopy
+      osascript -e '
+        tell application "Warp" to activate
+        delay 0.3
+        tell application "System Events"
+          tell process "Warp"
+            keystroke "9" using command down
+            delay 0.5
+            keystroke "v" using command down
+            delay 0.2
+            key code 36
+          end tell
+        end tell
+      '
+      update_status "$id" "done" "Typed into last Warp tab: $msg"
+    fi
     return
   fi
 

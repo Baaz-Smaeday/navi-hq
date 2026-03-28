@@ -387,11 +387,12 @@ function cmdLog(msg,cls){
   log.prepend(d);
   if(log.children.length>20)log.removeChild(log.lastChild);
 }
-async function sendCmd(cmd){
+async function sendCmd(cmd,project){
   if(!checkRateLimit()){toast('Rate limit: max 10 commands/min',true);return;}
+  const proj=project||'general';
   cmdLog(`Sending: "${cmd.slice(0,50)}"`,`pending`);
   try{
-    const r=await fetch(SB_URL+'/rest/v1/commands',{method:'POST',headers:{...SB_HDR,'Prefer':'return=representation'},body:JSON.stringify({command:cmd,project:'general',secret:SHARED_SECRET})});
+    const r=await fetch(SB_URL+'/rest/v1/commands',{method:'POST',headers:{...SB_HDR,'Prefer':'return=representation'},body:JSON.stringify({command:cmd,project:proj,secret:SHARED_SECRET})});
     if(r.ok){toast('Command sent!');cmdLog('Sent to laptop','sent');startPolling();}
     else{toast('Failed to send',true);cmdLog('Failed','fail');}
   }catch(e){toast('Network error',true);cmdLog('Network error','fail');}
@@ -507,8 +508,7 @@ async function typeToWarp(){
   const txt=document.getElementById('type-text').value.trim();
   if(!txt)return;
   const proj=document.getElementById('type-project').value;
-  const full=proj?`[Project: ${proj}] ${txt}`:txt;
-  await sendCmd('> '+full);
+  await sendCmd('> '+txt,proj);
   document.getElementById('type-text').value='';
 }
 document.getElementById('type-text').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();typeToWarp();}});
