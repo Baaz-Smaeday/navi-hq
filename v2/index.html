@@ -749,6 +749,28 @@ body{
         <div class="empty" style="padding:8px">No saved commands yet</div>
       </div>
 
+      <div class="sec">AI Templates</div>
+      <div class="mac-grid" id="template-grid"></div>
+
+      <div class="sec">Search All Projects</div>
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:14px;margin-bottom:12px">
+        <div style="display:flex;gap:8px">
+          <input class="commit-input" id="search-input" type="text" placeholder="Search code across all projects..." style="margin:0;flex:1" />
+          <button class="cmd-send" onclick="searchAll()" style="flex-shrink:0">Search</button>
+        </div>
+      </div>
+
+      <div class="sec">Scheduled Commands</div>
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:14px;margin-bottom:12px">
+        <div style="font-size:10px;color:var(--dim);margin-bottom:8px">Format: cron::command (e.g. 0 9 * * *::git pull)</div>
+        <div style="display:flex;gap:8px;margin-bottom:8px">
+          <input class="commit-input" id="schedule-input" type="text" placeholder="0 9 * * *::git pull" style="margin:0;flex:1" />
+          <button class="cmd-send" onclick="addSchedule()" style="flex-shrink:0">Add</button>
+        </div>
+        <div id="schedule-list" style="font-size:11px;color:var(--dim2)">Loading...</div>
+        <button class="cmd-send" onclick="listSchedules()" style="width:100%;margin-top:8px;background:var(--card2);color:var(--text);border:1px solid var(--border);border-radius:var(--radius-sm)">Refresh Schedules</button>
+      </div>
+
       <div class="sec">Command History</div>
       <div id="hist-list-2"></div>
     </div>
@@ -1945,6 +1967,63 @@ async function runPipeline(){
   startPolling();
 }
 
+// ═══ AI TEMPLATES ═══
+function renderTemplates(){
+  const grid=document.getElementById('template-grid');
+  if(!grid)return;
+  const templates=[
+    {lbl:'Fix All Errors',cmd:'Find and fix all errors, warnings, and TypeScript issues in this project',bg:'linear-gradient(135deg,#ef4444,#dc2626)',ico:'bug'},
+    {lbl:'Add Loading States',cmd:'Add loading spinners and skeleton states to all pages that fetch data',bg:'linear-gradient(135deg,#f59e0b,#d97706)',ico:'loader'},
+    {lbl:'Write Tests',cmd:'Write comprehensive tests for the main components and API routes',bg:'linear-gradient(135deg,#22c55e,#16a34a)',ico:'test-tube'},
+    {lbl:'Code Review',cmd:'Review all recent changes and suggest improvements for code quality',bg:'linear-gradient(135deg,#8b5cf6,#7c3aed)',ico:'search'},
+    {lbl:'Add Auth',cmd:'Add user authentication with login and signup pages using Supabase Auth',bg:'linear-gradient(135deg,#06b6d4,#0891b2)',ico:'shield'},
+    {lbl:'Responsive Fix',cmd:'Make all pages fully responsive for mobile, tablet and desktop',bg:'linear-gradient(135deg,#ec4899,#db2777)',ico:'smartphone'},
+    {lbl:'Add Dark Mode',cmd:'Add dark mode support with a toggle button',bg:'linear-gradient(135deg,#1e293b,#334155)',ico:'moon'},
+    {lbl:'Optimise Speed',cmd:'Optimise this project for performance - lazy loading, code splitting, image optimisation',bg:'linear-gradient(135deg,#f97316,#ea580c)',ico:'zap'},
+  ];
+  grid.innerHTML=templates.map(t=>
+    `<div class="mac-btn" onclick="sendDirect('${t.cmd.replace(/'/g,"\\'")}',document.getElementById('sel-project').value,'claude-code')"><div class="mac-ico" style="background:${t.bg}"><i data-lucide="${t.ico}"></i></div><div class="mac-lbl">${t.lbl}</div></div>`
+  ).join('');
+  setTimeout(()=>lucide.createIcons(),100);
+}
+
+// ═══ SEARCH ALL PROJECTS ═══
+async function searchAll(){
+  const q=document.getElementById('search-input').value.trim();
+  if(!q){toast('Enter search term',true);return;}
+  await sendDirect('__navi_search_all::'+q,'general','shell',true);
+  showResult('Searching all projects for: '+q+'...',null,true);
+  startPolling();
+  switchTab('dashboard');
+}
+
+// ═══ SCHEDULED COMMANDS ═══
+async function addSchedule(){
+  const input=document.getElementById('schedule-input').value.trim();
+  if(!input||!input.includes('::')){toast('Format: cron::command',true);return;}
+  const proj=document.getElementById('sel-project').value;
+  await sendDirect('__navi_schedule_add::'+input,proj,'shell',true);
+  setTimeout(listSchedules,3000);
+  toast('Schedule added');
+}
+
+async function listSchedules(){
+  await sendDirect('__navi_schedule_list::','general','shell',true);
+  let attempts=0;
+  const poll=setInterval(async()=>{
+    attempts++;
+    try{
+      const r=await fetch(SB_URL+'/rest/v1/commands?order=created_at.desc&limit=1',{headers:SB_HDR});
+      const d=await r.json();
+      if(d.length>0&&d[0].status==='done'&&d[0].command.includes('schedule_list')){
+        document.getElementById('schedule-list').textContent=d[0].result||'No schedules';
+        clearInterval(poll);
+      }
+    }catch(e){}
+    if(attempts>10)clearInterval(poll);
+  },2000);
+}
+
 // ═══ TAB SWITCHING ═══
 function switchTab(tab){
   document.querySelectorAll('.tab-page').forEach(p=>p.classList.remove('active'));
@@ -1985,6 +2064,7 @@ function init(){
   renderProjects();
   renderMacActions();
   renderSaved();
+  renderTemplates();
   loadHistory();
   checkLaptop();
   checkAllHealth();

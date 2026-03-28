@@ -665,58 +665,48 @@ run_copilot() {
   update_status "$id" "done" "Sent to Copilot: $cmd"
 }
 
-run_chatgpt() {
-  local id="$1" cmd="$2"
-  log "Opening ChatGPT"
+# Smart app opener: checks desktop app first, then browser
+open_ai_app() {
+  local app_name="$1" app_url="$2" cmd="$3"
   echo -n "$cmd" | pbcopy
-  open "https://chatgpt.com/" 2>/dev/null
-  sleep 2
-  gui_osascript -e '
-    tell application "System Events"
-      tell process "Google Chrome"
+  # Check if desktop app exists
+  if [ -d "/Applications/${app_name}.app" ] || [ -d "$HOME/Applications/${app_name}.app" ]; then
+    open -a "$app_name" 2>/dev/null
+  else
+    open "$app_url" 2>/dev/null
+  fi
+  # In foreground mode, try to paste
+  if [ "$RUN_MODE" = "foreground" ]; then
+    sleep 2
+    gui_osascript -e '
+      tell application "System Events"
         keystroke "v" using command down
         delay 0.3
         key code 36
       end tell
-    end tell
-  '
-  update_status "$id" "done" "Sent to ChatGPT: $cmd — check browser"
+    ' 2>/dev/null
+  fi
+}
+
+run_chatgpt() {
+  local id="$1" cmd="$2"
+  log "Opening ChatGPT"
+  open_ai_app "ChatGPT" "https://chatgpt.com/" "$cmd"
+  update_status "$id" "done" "Sent to ChatGPT: $cmd — check laptop. Text copied to clipboard."
 }
 
 run_gemini() {
   local id="$1" cmd="$2"
   log "Opening Gemini"
-  echo -n "$cmd" | pbcopy
-  open "https://gemini.google.com/" 2>/dev/null
-  sleep 2
-  gui_osascript -e '
-    tell application "System Events"
-      tell process "Google Chrome"
-        keystroke "v" using command down
-        delay 0.3
-        key code 36
-      end tell
-    end tell
-  '
-  update_status "$id" "done" "Sent to Gemini: $cmd — check browser"
+  open_ai_app "Google Gemini" "https://gemini.google.com/" "$cmd"
+  update_status "$id" "done" "Sent to Gemini: $cmd — check laptop. Text copied to clipboard."
 }
 
 run_claude_web() {
   local id="$1" cmd="$2"
   log "Opening Claude Web"
-  echo -n "$cmd" | pbcopy
-  open "https://claude.ai/new" 2>/dev/null
-  sleep 2
-  gui_osascript -e '
-    tell application "System Events"
-      tell process "Google Chrome"
-        keystroke "v" using command down
-        delay 0.3
-        key code 36
-      end tell
-    end tell
-  '
-  update_status "$id" "done" "Sent to Claude Web: $cmd — check browser"
+  open_ai_app "Claude" "https://claude.ai/new" "$cmd"
+  update_status "$id" "done" "Sent to Claude Web: $cmd — check laptop. Text copied to clipboard."
 }
 
 run_aider() {
@@ -1045,6 +1035,77 @@ for s in '''$navi_arg'''.split('&&'):
           fi
         done <<< "$step_list"
         update_status "$id" "done" "Pipeline COMPLETE ($total steps)\n$all_output"
+        ;;
+
+      # ── SCHEDULE ──
+      schedule_add)
+        log "Adding scheduled command"
+        local sched_file="/tmp/navi-schedule.json"
+        [ ! -f "$sched_file" ] && echo '[]' > "$sched_file"
+        python3 -c "
+import json,sys
+s=json.load(open('$sched_file'))
+parts='$navi_arg'.split('::')
+if len(parts)>=2:
+    s.append({'cron':parts[0],'cmd':parts[1],'project':'$project','enabled':True})
+    json.dump(s,open('$sched_file','w'),indent=2)
+    print(f'Scheduled: {parts[1]} ({parts[0]})')
+else:
+    print('Format: cron_expression::command')
+"
+        local sresult; sresult=$(python3 -c "
+import json
+s=json.load(open('$sched_file'))
+if s:
+    for i,x in enumerate(s): print(f'{i+1}. [{x[\"cron\"]}] {x[\"cmd\"]} ({x[\"project\"]})')
+else: print('No schedules')
+" 2>/dev/null)
+        update_status "$id" "done" "$sresult"
+        ;;
+
+      schedule_list)
+        local sched_file="/tmp/navi-schedule.json"
+        [ ! -f "$sched_file" ] && echo '[]' > "$sched_file"
+        local sresult; sresult=$(python3 -c "
+import json
+s=json.load(open('$sched_file'))
+if s:
+    for i,x in enumerate(s): print(f'{i+1}. [{x[\"cron\"]}] {x[\"cmd\"]} ({x[\"project\"]}) {\"ON\" if x.get(\"enabled\",True) else \"OFF\"}')
+else: print('No scheduled commands')
+" 2>/dev/null)
+        update_status "$id" "done" "$sresult"
+        ;;
+
+      schedule_del)
+        local sched_file="/tmp/navi-schedule.json"
+        python3 -c "
+import json
+s=json.load(open('$sched_file'))
+idx=int('$navi_arg')-1
+if 0<=idx<len(s):
+    removed=s.pop(idx)
+    json.dump(s,open('$sched_file','w'),indent=2)
+    print(f'Removed: {removed[\"cmd\"]}')
+else: print('Invalid index')
+" 2>/dev/null
+        update_status "$id" "done" "Schedule updated"
+        ;;
+
+      # ── SEARCH ACROSS PROJECTS ──
+      search_all)
+        log "Searching all projects for: $navi_arg"
+        local search_results=""
+        for pslug in $(python3 -c "import json; c=json.load(open('$CONFIG_FILE')); print(' '.join(c.get('projects',{}).keys()))"); do
+          local pdir; pdir=$(get_project_dir "$pslug")
+          if [ -n "$pdir" ] && [ -d "$pdir" ]; then
+            local matches; matches=$(cd "$pdir" && grep -rn --include='*.{js,ts,tsx,jsx,py,json,css,html}' "$navi_arg" . 2>/dev/null | head -5 | sed "s|^\./||")
+            if [ -n "$matches" ]; then
+              search_results="${search_results}\n--- $pslug ---\n$matches\n"
+            fi
+          fi
+        done
+        [ -z "$search_results" ] && search_results="No matches found"
+        update_status "$id" "done" "Search: $navi_arg\n$search_results"
         ;;
 
       # ── SYSTEM INFO ──
