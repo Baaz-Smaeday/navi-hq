@@ -93,7 +93,7 @@ body{
 }
 
 /* ═══ STATS ROW ═══ */
-.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:14px 0}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:14px 0}
 .stat{
   background:var(--card);border-radius:var(--radius);
   padding:14px 8px;text-align:center;
@@ -101,7 +101,7 @@ body{
 }
 .stat-val{font-size:28px;font-weight:800;line-height:1}
 .stat-lbl{font-size:9px;color:var(--dim2);text-transform:uppercase;letter-spacing:1.2px;margin-top:4px;font-weight:600}
-.c-green{color:var(--accent)}.c-blue{color:var(--accent2)}.c-warn{color:var(--warn)}
+.c-green{color:var(--accent)}.c-blue{color:var(--accent2)}.c-warn{color:var(--warn)}.c-red{color:var(--danger)}
 
 /* ═══ SECTION ═══ */
 .sec{font-size:11px;font-weight:700;color:var(--dim);text-transform:uppercase;letter-spacing:1.5px;margin:20px 0 10px}
@@ -407,6 +407,40 @@ body{
 .branch-item:active{border-color:var(--accent);background:#0a1a0f}
 .branch-item.current{border-color:var(--accent);color:var(--accent)}
 .branch-tag{font-size:9px;padding:2px 6px;border-radius:4px;background:var(--accent-dim);color:var(--accent)}
+
+/* ═══ HEALTH DOT ═══ */
+.health-dot{
+  width:8px;height:8px;border-radius:50%;flex-shrink:0;
+  background:var(--dim);transition:background 0.3s;
+}
+.health-dot.online{background:var(--accent);box-shadow:0 0 6px var(--accent)}
+.health-dot.offline{background:var(--danger);box-shadow:0 0 6px var(--danger)}
+.health-dot.checking{background:var(--warn);animation:pulse 1s infinite}
+.health-ms{font-size:9px;color:var(--dim);margin-left:auto;flex-shrink:0;font-family:'SF Mono',Monaco,monospace}
+
+/* ═══ VOICE BUTTON ═══ */
+.cmd-mic{
+  height:44px;width:44px;border-radius:var(--radius-sm);
+  border:1px solid var(--border);background:var(--card);
+  color:var(--dim2);font-size:18px;cursor:pointer;
+  transition:all 0.15s;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;
+}
+.cmd-mic:active,.cmd-mic.recording{border-color:var(--danger);color:var(--danger);background:#1a0a0a}
+.cmd-mic.recording{animation:pulse 1s infinite}
+
+/* ═══ SAVED COMMANDS ═══ */
+.saved-bar{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0}
+.saved-chip{
+  font-size:10px;padding:6px 10px;border-radius:20px;
+  background:var(--card);border:1px solid var(--border);
+  color:var(--dim2);cursor:pointer;font-weight:500;
+  display:flex;align-items:center;gap:6px;
+  transition:all 0.15s;white-space:nowrap;
+}
+.saved-chip:active{border-color:var(--accent);color:var(--accent)}
+.saved-del{color:var(--dim);font-size:14px;line-height:1}
+.saved-del:active{color:var(--danger)}
 .preview-spinner{
   width:30px;height:30px;border:3px solid var(--border);
   border-top-color:var(--accent2);border-radius:50%;
@@ -518,8 +552,9 @@ body{
   <div class="app-content" id="app-content">
     <!-- Stats -->
     <div class="stats">
-      <div class="stat"><div class="stat-val c-green" id="n-projects">0</div><div class="stat-lbl">Projects</div></div>
-      <div class="stat"><div class="stat-val c-blue" id="n-sessions">0</div><div class="stat-lbl">Laptop</div></div>
+      <div class="stat"><div class="stat-val c-green" id="n-live">0</div><div class="stat-lbl">Live</div></div>
+      <div class="stat"><div class="stat-val c-red" id="n-issues">0</div><div class="stat-lbl">Issues</div></div>
+      <div class="stat"><div class="stat-val c-blue" id="n-projects">0</div><div class="stat-lbl">Projects</div></div>
       <div class="stat"><div class="stat-val c-warn" id="n-cmds">0</div><div class="stat-lbl">Commands</div></div>
     </div>
 
@@ -549,6 +584,12 @@ body{
     <div class="sec">AI Quick Launch</div>
     <div class="mac-grid" id="ai-grid"></div>
 
+    <!-- Saved Commands -->
+    <div class="sec">Saved Commands</div>
+    <div class="saved-bar" id="saved-bar">
+      <div class="empty" style="padding:8px">No saved commands yet</div>
+    </div>
+
     <!-- History -->
     <div class="sec">Recent</div>
     <div id="hist-list"></div>
@@ -576,8 +617,10 @@ body{
       </select>
     </div>
     <div class="cmd-row">
+      <button class="cmd-mic" id="cmd-mic" onclick="toggleVoice()">&#127908;</button>
       <textarea class="cmd-input" id="cmd-input" placeholder="Send a command..." rows="1"></textarea>
       <button class="cmd-send" id="cmd-send" onclick="sendCommand()">Send</button>
+      <button class="cmd-mic" onclick="saveCommand()" style="font-size:13px">&#9733;</button>
     </div>
   </div>
 </div>
@@ -742,10 +785,16 @@ function renderProjects(){
     ) : '';
     const gitBtn = `<button class="git-btn" onclick="event.stopPropagation();openGitModal('${slug}')">Git &amp; Test</button>`;
 
+    const healthDot = p.url ? `<div class="health-dot checking" id="health-${slug}"></div>` : '';
+    const healthMs = p.url ? `<span class="health-ms" id="hms-${slug}">...</span>` : '';
+
     card.innerHTML=`
       <div class="proj-icon">${initial}</div>
       <div class="proj-body">
-        <div class="proj-name">${esc(p.name)}</div>
+        <div style="display:flex;align-items:center;gap:6px">
+          <div class="proj-name">${esc(p.name)}</div>
+          ${healthDot}${healthMs}
+        </div>
         ${url}
         <div class="proj-tags">${tags}</div>
         <div class="proj-actions">${actions}${previewBtn}${gitBtn}</div>
@@ -1306,14 +1355,100 @@ const cmdInput=document.getElementById('cmd-input');
 cmdInput.addEventListener('input',function(){this.style.height='auto';this.style.height=Math.min(this.scrollHeight,100)+'px';});
 cmdInput.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendCommand();}});
 
+// ═══ HEALTH CHECKS ═══
+async function pingProject(slug){
+  const p=CONFIG.projects[slug];
+  if(!p||!p.url)return;
+  const dot=document.getElementById('health-'+slug);
+  const ms=document.getElementById('hms-'+slug);
+  if(!dot)return;
+  dot.className='health-dot checking';
+  const t0=Date.now();
+  try{
+    await fetch(p.url,{method:'HEAD',mode:'no-cors',cache:'no-store'});
+    dot.className='health-dot online';
+    if(ms)ms.textContent=(Date.now()-t0)+'ms';
+  }catch{
+    dot.className='health-dot offline';
+    if(ms)ms.textContent='down';
+  }
+}
+function checkAllHealth(){
+  let live=0,issues=0;
+  const slugs=Object.keys(CONFIG.projects);
+  const withUrl=slugs.filter(s=>CONFIG.projects[s].url);
+  withUrl.forEach(s=>pingProject(s));
+  // Update stats after a delay
+  setTimeout(()=>{
+    document.querySelectorAll('.health-dot.online').forEach(()=>live++);
+    document.querySelectorAll('.health-dot.offline').forEach(()=>issues++);
+    document.getElementById('n-live').textContent=live;
+    document.getElementById('n-issues').textContent=issues;
+  },5000);
+}
+
+// ═══ VOICE COMMANDS ═══
+let recognition=null,isRecording=false;
+function toggleVoice(){
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  if(!SR){toast('Voice not supported',true);return;}
+  const mic=document.getElementById('cmd-mic');
+  if(isRecording){recognition.stop();mic.classList.remove('recording');isRecording=false;return;}
+  recognition=new SR();
+  recognition.lang='en-GB';recognition.continuous=false;recognition.interimResults=false;
+  recognition.onresult=e=>{
+    document.getElementById('cmd-input').value=e.results[0][0].transcript;
+    toast('Got it!');mic.classList.remove('recording');isRecording=false;
+  };
+  recognition.onerror=()=>{mic.classList.remove('recording');isRecording=false;toast('Voice error',true);};
+  recognition.onend=()=>{mic.classList.remove('recording');isRecording=false;};
+  recognition.start();mic.classList.add('recording');isRecording=true;
+  toast('Listening...');
+}
+
+// ═══ SAVED COMMANDS ═══
+function getSaved(){return JSON.parse(localStorage.getItem('nhq_saved')||'[]');}
+function setSaved(a){localStorage.setItem('nhq_saved',JSON.stringify(a));}
+function renderSaved(){
+  const bar=document.getElementById('saved-bar');
+  const saved=getSaved();
+  if(!saved.length){bar.innerHTML='<div style="font-size:10px;color:var(--dim);padding:4px">Tap &#9733; to save a command</div>';return;}
+  bar.innerHTML=saved.map((s,i)=>
+    `<div class="saved-chip" onclick="useSaved('${esc(s.replace(/'/g,"\\'"))}')"><span>${esc(s.slice(0,30))}</span><span class="saved-del" onclick="event.stopPropagation();delSaved(${i})">&times;</span></div>`
+  ).join('');
+}
+function saveCommand(){
+  const txt=document.getElementById('cmd-input').value.trim();
+  if(!txt){toast('Type a command first',true);return;}
+  const saved=getSaved();
+  if(saved.includes(txt)){toast('Already saved');return;}
+  saved.push(txt);setSaved(saved);renderSaved();toast('Saved!');
+}
+function delSaved(i){const s=getSaved();s.splice(i,1);setSaved(s);renderSaved();}
+function useSaved(cmd){document.getElementById('cmd-input').value=cmd;document.getElementById('cmd-input').focus();}
+
+// ═══ SUPABASE REALTIME ═══
+let realtimeChannel=null;
+function initRealtime(){
+  try{
+    // Use Supabase REST for realtime via polling optimization
+    // True Realtime requires supabase-js CDN — use fast polling as upgrade path
+    // Poll every 1.5s instead of 2s for snappier feel
+    // (Full Realtime subscription will be added when supabase-js CDN is included)
+  }catch(e){console.log('Realtime init error',e);}
+}
+
 // ═══ INIT ═══
 function init(){
   renderProjects();
   renderMacActions();
+  renderSaved();
   loadHistory();
   checkLaptop();
+  checkAllHealth();
   setInterval(checkLaptop,30000);
   setInterval(loadHistory,15000);
+  setInterval(checkAllHealth,60000);
 }
 </script>
 </body>
