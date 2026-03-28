@@ -1019,11 +1019,15 @@ route_command() {
       # ── PIPELINE ──
       pipeline)
         log "Running pipeline in: $proj_dir"
-        local steps; IFS='&&' read -ra steps <<< "$navi_arg"
-        local step_num=0 total=${#steps[@]}
-        local all_output=""
-        for step in "${steps[@]}"; do
-          step=$(echo "$step" | xargs) # trim
+        local all_output="" step_num=0
+        local total; total=$(python3 -c "print(len([s.strip() for s in '''$navi_arg'''.split('&&') if s.strip()]))")
+        local step_list; step_list=$(python3 -c "
+for s in '''$navi_arg'''.split('&&'):
+    s=s.strip()
+    if s: print(s)
+")
+        while IFS= read -r step; do
+          [ -z "$step" ] && continue
           step_num=$((step_num + 1))
           stream_result "$id" "Step $step_num/$total: $step\n$all_output"
           local sout; sout=$(cd "$proj_dir" && bash -c "$step" 2>&1 | tail -c 2000)
@@ -1033,7 +1037,7 @@ route_command() {
             update_status "$id" "error" "Pipeline FAILED at step $step_num/$total: $step\n$all_output"
             return
           fi
-        done
+        done <<< "$step_list"
         update_status "$id" "done" "Pipeline COMPLETE ($total steps)\n$all_output"
         ;;
 
