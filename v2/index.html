@@ -267,6 +267,85 @@ body{
 
 /* ═══ EMPTY STATE ═══ */
 .empty{text-align:center;padding:20px;color:var(--dim);font-size:12px}
+
+/* ═══ PREVIEW BUTTON ═══ */
+.preview-btn{
+  font-size:10px;padding:6px 10px;border-radius:8px;
+  background:#00b0ff22;color:var(--accent2);
+  border:1px solid #00b0ff33;font-weight:600;
+  cursor:pointer;transition:all 0.15s;
+}
+.preview-btn:active{background:var(--accent2);color:#000}
+.preview-btn.stop{background:#ff525222;color:var(--danger);border-color:#ff525233}
+.preview-btn.stop:active{background:var(--danger);color:#fff}
+.preview-btn.live{background:#00e67622;color:var(--accent);border-color:#00e67633;animation:pulse 2s ease-in-out infinite}
+
+/* ═══ PREVIEW MODAL ═══ */
+.modal-overlay{
+  position:fixed;inset:0;z-index:400;
+  background:rgba(0,0,0,0.9);backdrop-filter:blur(10px);
+  display:none;flex-direction:column;
+  padding-top:var(--safe-top);padding-bottom:var(--safe-bottom);
+  animation:fadeIn 0.2s ease;
+}
+.modal-overlay.show{display:flex}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+.modal-header{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:12px 16px;flex-shrink:0;
+}
+.modal-title{font-size:15px;font-weight:700}
+.modal-close{
+  font-size:24px;color:var(--dim);cursor:pointer;
+  background:none;border:none;padding:0 6px;line-height:1;
+}
+.modal-body{flex:1;overflow-y:auto;padding:0 16px 16px}
+.preview-frame{
+  width:100%;border-radius:var(--radius);
+  border:1px solid var(--border);background:#fff;
+  min-height:60vh;
+}
+.preview-url-bar{
+  display:flex;align-items:center;gap:8px;
+  background:var(--card);border:1px solid var(--border);
+  border-radius:var(--radius-sm);padding:10px 14px;
+  margin-bottom:12px;
+}
+.preview-url{
+  flex:1;font-size:12px;color:var(--accent2);
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+  font-family:'SF Mono',Monaco,monospace;
+}
+.preview-open{
+  font-size:10px;padding:5px 10px;border-radius:6px;
+  background:var(--accent2);color:#000;border:none;
+  font-weight:700;cursor:pointer;flex-shrink:0;
+}
+.preview-open:active{opacity:0.8}
+.preview-qr{
+  text-align:center;margin:12px 0;
+  background:var(--card);border:1px solid var(--border);
+  border-radius:var(--radius);padding:16px;
+}
+.preview-qr canvas{border-radius:8px}
+.preview-qr-label{font-size:10px;color:var(--dim2);margin-top:8px}
+.preview-controls{display:flex;gap:8px;margin-top:12px}
+.preview-ctrl-btn{
+  flex:1;padding:12px;border-radius:var(--radius-sm);
+  border:1px solid var(--border);background:var(--card);
+  color:var(--text);font-size:12px;font-weight:600;
+  cursor:pointer;text-align:center;
+}
+.preview-ctrl-btn:active{border-color:var(--accent);background:#0a1a0f}
+.preview-ctrl-btn.danger{border-color:#ff525233}
+.preview-ctrl-btn.danger:active{border-color:var(--danger);background:#1a0a0a;color:var(--danger)}
+.preview-status{text-align:center;padding:40px 20px;color:var(--dim2);font-size:13px}
+.preview-spinner{
+  width:30px;height:30px;border:3px solid var(--border);
+  border-top-color:var(--accent2);border-radius:50%;
+  animation:spin 0.8s linear infinite;margin:0 auto 16px;
+}
+@keyframes spin{to{transform:rotate(360deg)}}
 </style>
 </head>
 <body>
@@ -283,6 +362,35 @@ body{
     <div class="pin-dot"></div><div class="pin-dot"></div>
   </div>
   <div id="login-error"></div>
+</div>
+
+<!-- ═══ PREVIEW MODAL ═══ -->
+<div class="modal-overlay" id="preview-modal">
+  <div class="modal-header">
+    <div class="modal-title" id="preview-title">Preview</div>
+    <button class="modal-close" onclick="closePreview()">&times;</button>
+  </div>
+  <div class="modal-body">
+    <div id="preview-loading" class="preview-status">
+      <div class="preview-spinner"></div>
+      Starting dev server &amp; tunnel...
+    </div>
+    <div id="preview-content" style="display:none">
+      <div class="preview-url-bar">
+        <div class="preview-url" id="preview-url">—</div>
+        <button class="preview-open" onclick="window.open(document.getElementById('preview-url').textContent,'_blank')">Open</button>
+      </div>
+      <iframe class="preview-frame" id="preview-iframe" sandbox="allow-scripts allow-same-origin allow-forms" loading="lazy"></iframe>
+      <div class="preview-qr" id="preview-qr">
+        <canvas id="qr-canvas"></canvas>
+        <div class="preview-qr-label">Scan to open on any device</div>
+      </div>
+      <div class="preview-controls">
+        <button class="preview-ctrl-btn" onclick="document.getElementById('preview-iframe').src=document.getElementById('preview-iframe').src">Refresh</button>
+        <button class="preview-ctrl-btn danger" onclick="stopCurrentPreview()">Stop Preview</button>
+      </div>
+    </div>
+  </div>
 </div>
 
 <!-- ═══ APP ═══ -->
@@ -379,93 +487,13 @@ const CONFIG = {
   shared_secret: "navi_5591df03b5776c8c",
   pin_hash: 'b1ac3a14adbfd6d9c4c4641a18c04de2b5370726980041058edfa926a49a9fb5',
   projects: {
-  "complyfleet": {
-    "name": "ComplyFleet",
-    "dir": "/Users/sifatdad/Desktop/complyfleet",
-    "url": "https://complyfleet.co.uk",
-    "tags": [
-      "Next.js",
-      "Supabase"
-    ],
-    "quick_actions": [
-      "git status",
-      "run tests",
-      "deploy"
-    ]
-  },
-  "desimind": {
-    "name": "DesiMind",
-    "dir": "/Users/sifatdad/desimind",
-    "url": "https://desimind.co.uk",
-    "tags": [
-      "Next.js",
-      "Supabase"
-    ],
-    "quick_actions": [
-      "git status",
-      "run tests"
-    ]
-  },
-  "xeagle-booking": {
-    "name": "XEagle Booking",
-    "dir": "/Users/sifatdad/xeagle-booking",
-    "url": null,
-    "tags": [
-      "Courier",
-      "React"
-    ],
-    "quick_actions": [
-      "git status",
-      "run tests"
-    ]
-  },
-  "eagle-academy": {
-    "name": "Eagle Academy",
-    "dir": "/Users/sifatdad/Documents/Eagle Academy",
-    "url": null,
-    "tags": [
-      "React",
-      "Education"
-    ],
-    "quick_actions": [
-      "git status",
-      "run tests"
-    ]
-  },
-  "loadlink": {
-    "name": "LoadLink",
-    "dir": "/Users/sifatdad/LoadLink",
-    "url": null,
-    "tags": [
-      "React Native"
-    ],
-    "quick_actions": [
-      "git status",
-      "run tests"
-    ]
-  },
-  "baaz-delivery": {
-    "name": "Baaz Delivery CMS",
-    "dir": "/Users/sifatdad/Repo Rutiva/Baaz-Delivery-CMS",
-    "url": null,
-    "tags": [
-      "CMS"
-    ],
-    "quick_actions": [
-      "git status"
-    ]
-  },
-  "navi-hq": {
-    "name": "Navi HQ",
-    "dir": "/Users/sifatdad/Projects/navi-hq",
-    "url": "https://baaz-smaeday.github.io/navi-hq/",
-    "tags": [
-      "Dashboard"
-    ],
-    "quick_actions": [
-      "git status"
-    ]
-  }
+  "complyfleet": {"name":"ComplyFleet","dir":"/Users/sifatdad/Desktop/complyfleet","url":"https://complyfleet.co.uk","tags":["Next.js","Supabase"],"quick_actions":["git status","run tests","deploy"],"dev_cmd":"npm run dev","dev_port":3000},
+  "desimind": {"name":"DesiMind","dir":"/Users/sifatdad/desimind","url":"https://desimind.co.uk","tags":["Next.js","Supabase"],"quick_actions":["git status","run tests"],"dev_cmd":"npm run dev","dev_port":3001},
+  "xeagle-booking": {"name":"XEagle Booking","dir":"/Users/sifatdad/xeagle-booking","url":null,"tags":["Courier","React"],"quick_actions":["git status","run tests"],"dev_cmd":"npm run dev","dev_port":3002},
+  "eagle-academy": {"name":"Eagle Academy","dir":"/Users/sifatdad/Documents/Eagle Academy","url":null,"tags":["React","Education"],"quick_actions":["git status","run tests"],"dev_cmd":"npm run dev","dev_port":3003},
+  "loadlink": {"name":"LoadLink","dir":"/Users/sifatdad/LoadLink","url":null,"tags":["React Native"],"quick_actions":["git status","run tests"],"dev_cmd":"npx expo start","dev_port":8081},
+  "baaz-delivery": {"name":"Baaz Delivery CMS","dir":"/Users/sifatdad/Repo Rutiva/Baaz-Delivery-CMS","url":null,"tags":["CMS"],"quick_actions":["git status"],"dev_cmd":"npm run dev","dev_port":3004},
+  "navi-hq": {"name":"Navi HQ","dir":"/Users/sifatdad/Projects/navi-hq","url":"https://baaz-smaeday.github.io/navi-hq/","tags":["Dashboard"],"quick_actions":["git status"],"dev_cmd":"npx serve .","dev_port":3005}
 },
   mac_actions: {
   "open chrome": "open -a 'Google Chrome'",
@@ -509,6 +537,8 @@ const SB_HDR = {
 let selectedProject = 'general';
 let lastResultId = '';
 let polling = false;
+const activePreviews = {}; // {slug: {url, polling}}
+let currentPreviewSlug = '';
 let pollCount = 0;
 const MAX_POLLS = 150;
 const RATE_LIMIT = [];
@@ -596,6 +626,12 @@ function renderProjects(){
     const actions = (p.quick_actions||[]).map(a=>
       `<button class="qa-btn" onclick="event.stopPropagation();quickAction('${slug}','${esc(a)}')">${a}</button>`
     ).join('');
+    const hasDevCmd = p.dev_cmd ? true : false;
+    const previewActive = activePreviews[slug];
+    const previewBtn = hasDevCmd ? (previewActive
+      ? `<button class="preview-btn live" onclick="event.stopPropagation();openPreviewModal('${slug}')">Live Preview</button>`
+      : `<button class="preview-btn" onclick="event.stopPropagation();startPreview('${slug}')">Preview</button>`
+    ) : '';
 
     card.innerHTML=`
       <div class="proj-icon">${initial}</div>
@@ -603,7 +639,7 @@ function renderProjects(){
         <div class="proj-name">${esc(p.name)}</div>
         ${url}
         <div class="proj-tags">${tags}</div>
-        <div class="proj-actions">${actions}</div>
+        <div class="proj-actions">${actions}${previewBtn}</div>
       </div>
     `;
     list.appendChild(card);
@@ -816,6 +852,116 @@ function closeResult(){document.getElementById('result-panel').classList.remove(
 
 function copyResult(){
   navigator.clipboard.writeText(lastRawResult).then(()=>toast('Copied!')).catch(()=>toast('Copy failed',true));
+}
+
+// ═══ PREVIEW ═══
+async function startPreview(slug){
+  const p = CONFIG.projects[slug];
+  if(!p||!p.dev_cmd){toast('No dev command configured',true);return;}
+
+  currentPreviewSlug = slug;
+  const modal = document.getElementById('preview-modal');
+  modal.classList.add('show');
+  document.getElementById('preview-title').textContent = `Preview: ${p.name}`;
+  document.getElementById('preview-loading').style.display = 'block';
+  document.getElementById('preview-content').style.display = 'none';
+
+  // Send preview start command
+  await sendDirect(`__navi_preview::start::${slug}`, slug, 'shell');
+
+  // Poll for the URL in the result
+  let attempts = 0;
+  const previewPoll = setInterval(async ()=>{
+    attempts++;
+    try{
+      const r = await fetch(SB_URL+'/rest/v1/commands?order=created_at.desc&limit=1',{headers:SB_HDR});
+      const d = await r.json();
+      if(d.length>0 && d[0].result && d[0].status==='done'){
+        const urlMatch = d[0].result.match(/URL:\s*(https?:\/\/[^\s]+)/);
+        if(urlMatch){
+          const url = urlMatch[1];
+          activePreviews[slug] = {url};
+          showPreviewUI(slug, url);
+          clearInterval(previewPoll);
+          renderProjects();
+          return;
+        }
+      }
+      if(d.length>0 && d[0].status==='error'){
+        toast('Preview failed: ' + (d[0].result||'').slice(0,100), true);
+        closePreview();
+        clearInterval(previewPoll);
+        return;
+      }
+    }catch(e){}
+    if(attempts > 30){
+      toast('Preview timed out',true);
+      closePreview();
+      clearInterval(previewPoll);
+    }
+  }, 2000);
+}
+
+function showPreviewUI(slug, url){
+  document.getElementById('preview-loading').style.display = 'none';
+  document.getElementById('preview-content').style.display = 'block';
+  document.getElementById('preview-url').textContent = url;
+  document.getElementById('preview-iframe').src = url;
+  generateQR(url);
+}
+
+function openPreviewModal(slug){
+  const info = activePreviews[slug];
+  if(!info) return;
+  currentPreviewSlug = slug;
+  const p = CONFIG.projects[slug];
+  const modal = document.getElementById('preview-modal');
+  modal.classList.add('show');
+  document.getElementById('preview-title').textContent = `Preview: ${p.name}`;
+  showPreviewUI(slug, info.url);
+}
+
+function closePreview(){
+  document.getElementById('preview-modal').classList.remove('show');
+  document.getElementById('preview-iframe').src = '';
+}
+
+async function stopCurrentPreview(){
+  if(!currentPreviewSlug) return;
+  await sendDirect(`__navi_preview::stop::${currentPreviewSlug}`, currentPreviewSlug, 'shell');
+  delete activePreviews[currentPreviewSlug];
+  closePreview();
+  renderProjects();
+  toast('Preview stopped');
+}
+
+// Simple QR code generator (alphanumeric, uses canvas)
+function generateQR(text){
+  const canvas = document.getElementById('qr-canvas');
+  const ctx = canvas.getContext('2d');
+  const size = 160;
+  canvas.width = size; canvas.height = size;
+
+  // Use a simple visual QR placeholder with the URL encoded as a pattern
+  // For a real QR, we'd use a library — let's use a free API instead
+  const img = new Image();
+  img.crossOrigin = 'anonymous';
+  img.onload = ()=>{
+    ctx.fillStyle = '#fff';
+    ctx.fillRect(0,0,size,size);
+    ctx.drawImage(img, 0, 0, size, size);
+  };
+  img.onerror = ()=>{
+    // Fallback: just show URL text
+    ctx.fillStyle = '#151515';
+    ctx.fillRect(0,0,size,size);
+    ctx.fillStyle = '#00b0ff';
+    ctx.font = '11px monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText('Scan QR', size/2, size/2 - 10);
+    ctx.fillText('not available', size/2, size/2 + 10);
+  };
+  img.src = `https://api.qrserver.com/v1/create-qr-code/?size=${size}x${size}&data=${encodeURIComponent(text)}&bgcolor=151515&color=00e676`;
 }
 
 // ═══ HISTORY ═══

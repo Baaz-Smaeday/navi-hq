@@ -14,7 +14,8 @@
 # Usage: bash navi-listener.sh [config-path]
 # ═══════════════════════════════════════════════════════════════
 
-set -euo pipefail
+set -uo pipefail
+# Note: NOT using set -e because we don't want the listener to crash on transient errors
 
 # --- Config ---
 CONFIG_FILE="${1:-$(dirname "$0")/navi-config.json}"
@@ -52,6 +53,13 @@ LOG_FILE="/tmp/navi-listener.log"
 LAST_HEARTBEAT=0
 
 mkdir -p "$SESSION_DIR"
+
+# --- GUI Helper ---
+# Wraps osascript with launchctl asuser so GUI control works from background LaunchAgent
+USER_ID=$(id -u)
+gui_osascript() {
+  launchctl asuser "$USER_ID" osascript "$@" 2>&1
+}
 
 # --- Helpers ---
 
@@ -112,6 +120,200 @@ heartbeat() {
     -d "{\"id\":\"${LISTENER_ID}\",\"hostname\":\"$(hostname -s)\",\"last_heartbeat\":\"$(date -u +%Y-%m-%dT%H:%M:%SZ)\",\"status\":\"online\"}" > /dev/null 2>&1
 }
 
+get_project_field() {
+  local project="$1" field="$2"
+  python3 -c "
+import json
+c=json.load(open('$CONFIG_FILE'))
+p=c.get('projects',{}).get('$project',{})
+print(p.get('$field',''))
+" 2>/dev/null
+}
+
+# ═══════════════════════════════════════════
+# PREVIEW MANAGEMENT
+# ═══════════════════════════════════════════
+
+PREVIEW_REGISTRY="/tmp/navi-previews.json"
+
+init_preview_registry() {
+  if [ ! -f "$PREVIEW_REGISTRY" ]; then
+    echo '{}' > "$PREVIEW_REGISTRY"
+  fi
+}
+
+get_preview_info() {
+  local project="$1"
+  python3 -c "
+import json
+try:
+    r=json.load(open('$PREVIEW_REGISTRY'))
+    p=r.get('$project',{})
+    if p: print(json.dumps(p))
+    else: print('')
+except: print('')
+" 2>/dev/null
+}
+
+save_preview() {
+  local project="$1" dev_pid="$2" tunnel_pid="$3" tunnel_url="$4" port="$5"
+  python3 -c "
+import json
+r=json.load(open('$PREVIEW_REGISTRY'))
+r['$project']={'dev_pid':$dev_pid,'tunnel_pid':$tunnel_pid,'tunnel_url':'$tunnel_url','port':$port,'started':'$(date -u +%Y-%m-%dT%H:%M:%SZ)'}
+json.dump(r,open('$PREVIEW_REGISTRY','w'),indent=2)
+" 2>/dev/null
+}
+
+remove_preview() {
+  local project="$1"
+  python3 -c "
+import json
+r=json.load(open('$PREVIEW_REGISTRY'))
+r.pop('$project',None)
+json.dump(r,open('$PREVIEW_REGISTRY','w'),indent=2)
+" 2>/dev/null
+}
+
+start_preview() {
+  local id="$1" project="$2"
+  local project_dir; project_dir=$(get_project_dir "$project")
+  local dev_cmd; dev_cmd=$(get_project_field "$project" "dev_cmd")
+  local dev_port; dev_port=$(get_project_field "$project" "dev_port")
+
+  if [ -z "$project_dir" ] || [ ! -d "$project_dir" ]; then
+    update_status "$id" "error" "Project directory not found: $project"
+    return
+  fi
+  if [ -z "$dev_cmd" ]; then
+    update_status "$id" "error" "No dev_cmd configured for: $project"
+    return
+  fi
+  if [ -z "$dev_port" ]; then
+    dev_port=3000
+  fi
+
+  # Check if already running
+  local existing; existing=$(get_preview_info "$project")
+  if [ -n "$existing" ]; then
+    local old_pid; old_pid=$(echo "$existing" | python3 -c "import sys,json; print(json.load(sys.stdin).get('dev_pid',''))" 2>/dev/null)
+    if [ -n "$old_pid" ] && kill -0 "$old_pid" 2>/dev/null; then
+      local old_url; old_url=$(echo "$existing" | python3 -c "import sys,json; print(json.load(sys.stdin).get('tunnel_url',''))" 2>/dev/null)
+      update_status "$id" "done" "Preview already running for $project\n\nURL: $old_url\nPort: $dev_port"
+      return
+    fi
+    # Old preview is dead, clean up
+    remove_preview "$project"
+  fi
+
+  log "Starting preview for $project: $dev_cmd (port $dev_port)"
+  stream_result "$id" "Starting dev server for $project..."
+
+  # Kill anything on the port first
+  lsof -ti:$dev_port | xargs kill -9 2>/dev/null || true
+  sleep 1
+
+  # Start dev server
+  local dev_log="$SESSION_DIR/preview-dev-${project}.log"
+  (cd "$project_dir" && PORT=$dev_port $dev_cmd > "$dev_log" 2>&1) &
+  local dev_pid=$!
+  log "Dev server PID: $dev_pid"
+
+  # Wait for dev server to be ready (max 30s)
+  local elapsed=0
+  while ! curl -s -o /dev/null "http://localhost:$dev_port" 2>/dev/null; do
+    sleep 2; elapsed=$((elapsed + 2))
+    if ! kill -0 "$dev_pid" 2>/dev/null; then
+      local err_log=""; [ -f "$dev_log" ] && err_log=$(tail -c 2000 "$dev_log")
+      update_status "$id" "error" "Dev server crashed.\n\n$err_log"
+      remove_preview "$project"
+      return
+    fi
+    if [ "$elapsed" -ge 30 ]; then
+      stream_result "$id" "Dev server taking long, starting tunnel anyway..."
+      break
+    fi
+    stream_result "$id" "Waiting for dev server... (${elapsed}s)"
+  done
+
+  stream_result "$id" "Dev server running on port $dev_port. Starting tunnel..."
+
+  # Start tunnel
+  local tunnel_log="$SESSION_DIR/preview-tunnel-${project}.log"
+  npx localtunnel --port "$dev_port" > "$tunnel_log" 2>&1 &
+  local tunnel_pid=$!
+  log "Tunnel PID: $tunnel_pid"
+
+  # Wait for tunnel URL (max 15s)
+  local tunnel_url="" t_elapsed=0
+  while [ -z "$tunnel_url" ]; do
+    sleep 2; t_elapsed=$((t_elapsed + 2))
+    if [ -f "$tunnel_log" ]; then
+      tunnel_url=$(grep -o 'https://[^ ]*' "$tunnel_log" 2>/dev/null | head -1)
+    fi
+    if ! kill -0 "$tunnel_pid" 2>/dev/null; then
+      local t_err=""; [ -f "$tunnel_log" ] && t_err=$(cat "$tunnel_log")
+      update_status "$id" "error" "Tunnel failed to start.\n\n$t_err"
+      kill "$dev_pid" 2>/dev/null || true
+      remove_preview "$project"
+      return
+    fi
+    if [ "$t_elapsed" -ge 15 ]; then
+      update_status "$id" "error" "Tunnel timed out. Check network connection."
+      kill "$dev_pid" 2>/dev/null || true
+      kill "$tunnel_pid" 2>/dev/null || true
+      remove_preview "$project"
+      return
+    fi
+  done
+
+  # Save to registry
+  init_preview_registry
+  save_preview "$project" "$dev_pid" "$tunnel_pid" "$tunnel_url" "$dev_port"
+  log "Preview live: $tunnel_url"
+
+  update_status "$id" "done" "Preview live for $(get_project_field "$project" "name")\n\nURL: $tunnel_url\nLocal: http://localhost:$dev_port\n\nOpen this URL on your phone to see the preview.\nThe tunnel will stay active until you stop it."
+}
+
+stop_preview() {
+  local id="$1" project="$2"
+  local existing; existing=$(get_preview_info "$project")
+  if [ -z "$existing" ]; then
+    update_status "$id" "done" "No preview running for $project"
+    return
+  fi
+
+  local dev_pid; dev_pid=$(echo "$existing" | python3 -c "import sys,json; print(json.load(sys.stdin).get('dev_pid',''))" 2>/dev/null)
+  local tunnel_pid; tunnel_pid=$(echo "$existing" | python3 -c "import sys,json; print(json.load(sys.stdin).get('tunnel_pid',''))" 2>/dev/null)
+
+  kill "$dev_pid" 2>/dev/null || true
+  kill "$tunnel_pid" 2>/dev/null || true
+  # Also kill child processes
+  pkill -P "$dev_pid" 2>/dev/null || true
+  pkill -P "$tunnel_pid" 2>/dev/null || true
+
+  remove_preview "$project"
+  log "Preview stopped for $project"
+  update_status "$id" "done" "Preview stopped for $project"
+}
+
+list_previews() {
+  local id="$1"
+  init_preview_registry
+  local result; result=$(python3 -c "
+import json
+r=json.load(open('$PREVIEW_REGISTRY'))
+if not r:
+    print('No active previews.')
+else:
+    lines=[]
+    for proj,info in r.items():
+        lines.append(f\"{proj}: {info.get('tunnel_url','?')} (port {info.get('port','?')})\")
+    print('Active previews:\n' + '\n'.join(lines))
+" 2>/dev/null)
+  update_status "$id" "done" "$result"
+}
+
 # ═══════════════════════════════════════════
 # WARP TAB MANAGEMENT
 # ═══════════════════════════════════════════
@@ -160,7 +362,7 @@ reset_tab_registry() {
 
 # Count Warp tabs via AppleScript
 count_warp_tabs() {
-  osascript -e '
+  gui_osascript -e '
     tell application "System Events"
       tell process "Warp"
         count of windows
@@ -194,7 +396,7 @@ open_warp_claude() {
 
   echo -n "$warp_cmd" | pbcopy
 
-  osascript <<'APPLESCRIPT'
+  gui_osascript <<'APPLESCRIPT'
     tell application "Warp" to activate
     delay 0.5
     tell application "System Events"
@@ -229,7 +431,7 @@ open_warp_claude_with_msg() {
   # Wait for Claude to be fully ready then type the message
   sleep 3
   echo -n "$msg" | pbcopy
-  osascript -e '
+  gui_osascript -e '
     tell application "System Events"
       tell process "Warp"
         keystroke "v" using command down
@@ -248,7 +450,7 @@ type_into_warp_tab() {
   echo -n "$msg" | pbcopy
 
   # Cmd+1 through Cmd+9 to switch tabs
-  osascript -e "
+  gui_osascript -e "
     tell application \"Warp\" to activate
     delay 0.3
     tell application \"System Events\"
@@ -345,7 +547,7 @@ run_cursor() {
     sleep 1
   fi
   echo -n "$cmd" | pbcopy
-  osascript -e '
+  gui_osascript -e '
     tell application "Cursor" to activate
     delay 0.5
     tell application "System Events"
@@ -357,7 +559,7 @@ run_cursor() {
         key code 36
       end tell
     end tell
-  ' 2>&1
+  '
   update_status "$id" "done" "Sent to Cursor AI: $cmd"
 }
 
@@ -369,7 +571,7 @@ run_copilot() {
     sleep 1
   fi
   echo -n "$cmd" | pbcopy
-  osascript -e '
+  gui_osascript -e '
     tell application "Visual Studio Code" to activate
     delay 0.5
     tell application "System Events"
@@ -381,7 +583,7 @@ run_copilot() {
         key code 36
       end tell
     end tell
-  ' 2>&1
+  '
   update_status "$id" "done" "Sent to Copilot: $cmd"
 }
 
@@ -391,7 +593,7 @@ run_chatgpt() {
   echo -n "$cmd" | pbcopy
   open "https://chatgpt.com/" 2>/dev/null
   sleep 2
-  osascript -e '
+  gui_osascript -e '
     tell application "System Events"
       tell process "Google Chrome"
         keystroke "v" using command down
@@ -399,7 +601,7 @@ run_chatgpt() {
         key code 36
       end tell
     end tell
-  ' 2>&1
+  '
   update_status "$id" "done" "Sent to ChatGPT: $cmd — check browser"
 }
 
@@ -409,7 +611,7 @@ run_gemini() {
   echo -n "$cmd" | pbcopy
   open "https://gemini.google.com/" 2>/dev/null
   sleep 2
-  osascript -e '
+  gui_osascript -e '
     tell application "System Events"
       tell process "Google Chrome"
         keystroke "v" using command down
@@ -417,7 +619,7 @@ run_gemini() {
         key code 36
       end tell
     end tell
-  ' 2>&1
+  '
   update_status "$id" "done" "Sent to Gemini: $cmd — check browser"
 }
 
@@ -427,7 +629,7 @@ run_claude_web() {
   echo -n "$cmd" | pbcopy
   open "https://claude.ai/new" 2>/dev/null
   sleep 2
-  osascript -e '
+  gui_osascript -e '
     tell application "System Events"
       tell process "Google Chrome"
         keystroke "v" using command down
@@ -435,7 +637,7 @@ run_claude_web() {
         key code 36
       end tell
     end tell
-  ' 2>&1
+  '
   update_status "$id" "done" "Sent to Claude Web: $cmd — check browser"
 }
 
@@ -479,7 +681,14 @@ run_mac_action() {
   local mac_cmd; mac_cmd=$(get_mac_action "$action")
   if [ -n "$mac_cmd" ]; then
     log "Mac action: $action → $mac_cmd"
-    eval "$mac_cmd" 2>&1
+    # Route osascript commands through launchctl asuser for background compatibility
+    if echo "$mac_cmd" | grep -q "^osascript"; then
+      # Replace 'osascript' with 'launchctl asuser <uid> osascript' for GUI access
+      local gui_cmd; gui_cmd=$(echo "$mac_cmd" | sed "s|^osascript|launchctl asuser $USER_ID osascript|")
+      eval "$gui_cmd" 2>&1
+    else
+      eval "$mac_cmd" 2>&1
+    fi
     update_status "$id" "done" "Executed: $action"
   else
     update_status "$id" "error" "Unknown action: $action"
@@ -503,6 +712,19 @@ route_command() {
 
   # --- Special commands (before tool routing) ---
 
+  # PREVIEW COMMANDS
+  if echo "$cmd" | grep -q "^__navi_preview::"; then
+    local preview_action; preview_action=$(echo "$cmd" | cut -d: -f4)
+    local preview_project; preview_project=$(echo "$cmd" | cut -d: -f5)
+    case "$preview_action" in
+      start) start_preview "$id" "$preview_project" ;;
+      stop)  stop_preview "$id" "$preview_project" ;;
+      list)  list_previews "$id" ;;
+      *)     update_status "$id" "error" "Unknown preview action: $preview_action" ;;
+    esac
+    return
+  fi
+
   # NEW WARP + CLAUDE (like v1: opens new tab with Claude in project dir)
   if echo "$cmd_lower" | grep -qE "(new claude|start claude|open claude|claude chat|new chat|new warp|open warp)"; then
     local project_dir="$HOME"
@@ -524,9 +746,9 @@ route_command() {
       smart_warp_route "$project" "$project_dir" "$msg"
       update_status "$id" "done" "Sent to Claude in $project: $msg"
     else
-      # No project specified — type into the last active Warp tab
+      # No project — type into last active Warp tab
       echo -n "$msg" | pbcopy
-      osascript -e '
+      gui_osascript -e '
         tell application "Warp" to activate
         delay 0.3
         tell application "System Events"
@@ -602,9 +824,8 @@ route_command() {
   case "${tool:-$DEFAULT_TOOL}" in
     claude-code)
       # SMART ROUTING:
-      # - Project selected → find or open Warp tab for that project, type into it
-      #   (saves tokens, keeps conversation, visual on laptop)
-      # - No project ("general") → silent claude -p, result to phone (quick one-shot)
+      # - Project selected → find or open Warp tab, type into Claude (visual on laptop)
+      # - No project ("general") → silent claude -p, result streams to phone
       if [ "$project" != "general" ] && [ -n "$project" ]; then
         log "Smart route: project '$project' → Warp tab"
         smart_warp_route "$project" "$project_dir" "$cmd"
@@ -614,7 +835,7 @@ route_command() {
       fi
       ;;
     warp)
-      # Always open a NEW Warp tab with Claude in the project dir
+      # Open a NEW Warp tab with Claude in the project dir
       open_warp_claude "$project_dir" "$project"
       update_status "$id" "done" "Opened new Warp+Claude tab for: $project ($project_dir)"
       ;;
