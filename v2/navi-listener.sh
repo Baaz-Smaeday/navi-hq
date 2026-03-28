@@ -515,13 +515,47 @@ smart_warp_route() {
   tab_idx=$(get_tab_index "$project")
 
   if [ -n "$tab_idx" ]; then
-    # Project already has a tab — switch to it and type
-    log "Project '$project' → existing tab $tab_idx"
-    type_into_warp_tab "$tab_idx" "$msg"
+    # Project already has a tab — activate Warp and paste into it
+    log "Project '$project' → existing tab $tab_idx, typing message"
+    echo -n "$msg" | pbcopy
+    gui_osascript -e "
+      tell application \"Warp\" to activate
+      delay 0.5
+      tell application \"System Events\"
+        tell process \"Warp\"
+          keystroke \"$tab_idx\" using command down
+          delay 0.5
+          keystroke \"v\" using command down
+          delay 0.2
+          key code 36
+        end tell
+      end tell
+    "
   else
-    # No tab for this project — open new one and type message
-    log "Project '$project' → opening new tab"
-    open_warp_claude_with_msg "$project_dir" "$project" "$msg"
+    # Check if Warp is running with any tabs — if so, just type into active tab
+    local warp_running
+    warp_running=$(pgrep -x "Warp" 2>/dev/null || true)
+    if [ -n "$warp_running" ]; then
+      # Warp is open — type into the last/active tab
+      log "Project '$project' → Warp active, typing into current tab"
+      echo -n "$msg" | pbcopy
+      gui_osascript -e '
+        tell application "Warp" to activate
+        delay 0.5
+        tell application "System Events"
+          tell process "Warp"
+            keystroke "v" using command down
+            delay 0.2
+            key code 36
+          end tell
+        end tell
+      '
+      register_tab "$project"
+    else
+      # Warp not running — open new tab with Claude
+      log "Project '$project' → opening new Warp tab"
+      open_warp_claude_with_msg "$project_dir" "$project" "$msg"
+    fi
   fi
 }
 
@@ -1170,9 +1204,8 @@ route_command() {
 # MAIN LOOP
 # ═══════════════════════════════════════════
 
-# Reset tab registry on startup (clean slate)
+# Keep existing tab registry (don't reset — tabs may still be open from before)
 init_tab_registry
-reset_tab_registry
 
 echo "╔═══════════════════════════════════════════╗"
 echo "║         NAVI HQ v2.2 — Listener           ║"
