@@ -120,6 +120,40 @@ heartbeat() {
     -d "{\"id\":\"${LISTENER_ID}\",\"hostname\":\"$(hostname -s)\",\"last_heartbeat\":\"$(date -u +%Y-%m-%dT%H:%M:%SZ)\",\"status\":\"online\"}" > /dev/null 2>&1
 }
 
+# Decrypt ENC:: prefixed commands
+decrypt_cmd() {
+  local cmd="$1"
+  if echo "$cmd" | grep -q "^ENC::"; then
+    local encrypted; encrypted=$(echo "$cmd" | sed 's/^ENC:://')
+    # Decrypt using Python + config encryption key
+    local decrypted; decrypted=$(python3 -c "
+import base64,json,hashlib
+from cryptography.hazmat.primitives.ciphers.aead import AESGCM
+try:
+    c=json.load(open('$CONFIG_FILE'))
+    key_pass=c.get('encryption_key','navi-default-key')
+    # PBKDF2 derive key (must match browser)
+    import hashlib
+    dk=hashlib.pbkdf2_hmac('sha256',key_pass.encode(),'navi-hq-salt'.encode(),100000,dklen=32)
+    data=base64.b64decode('$encrypted')
+    iv=data[:12]
+    ct=data[12:]
+    aesgcm=AESGCM(dk)
+    print(aesgcm.decrypt(iv,ct,None).decode())
+except Exception as e:
+    print('DECRYPT_FAIL:'+str(e))
+" 2>/dev/null)
+    if echo "$decrypted" | grep -q "^DECRYPT_FAIL:"; then
+      # Decryption failed, use original (might not be encrypted)
+      echo "$cmd"
+    else
+      echo "$decrypted"
+    fi
+  else
+    echo "$cmd"
+  fi
+}
+
 get_project_field() {
   local project="$1" field="$2"
   python3 -c "
@@ -1174,6 +1208,8 @@ while true; do
 
   if [ -n "$ID" ]; then
     CMD=$(echo "$ROW" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d[0]['command'])" 2>/dev/null)
+    # Decrypt if encrypted
+    CMD=$(decrypt_cmd "$CMD")
     PROJ=$(echo "$ROW" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d[0].get('project','general'))" 2>/dev/null)
     TOOL=$(echo "$ROW" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d[0].get('tool','claude-code'))" 2>/dev/null)
     SECRET=$(echo "$ROW" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d[0].get('secret',''))" 2>/dev/null)

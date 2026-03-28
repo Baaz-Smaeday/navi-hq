@@ -483,6 +483,34 @@ body{
 }
 .deploy-btn:active{background:var(--danger);color:#fff}
 
+/* ═══ EMAIL LOGIN ═══ */
+.email-login{display:none}
+.email-login input{
+  width:100%;padding:14px 16px;border-radius:var(--radius-sm);
+  border:1px solid var(--border2);background:var(--card);
+  color:var(--text);font-size:14px;outline:none;
+  margin-bottom:8px;
+}
+.email-login input:focus{border-color:var(--accent)}
+.email-login input::placeholder{color:var(--dim)}
+.email-login button{
+  width:100%;padding:14px;border-radius:var(--radius-sm);
+  border:none;background:var(--accent);color:#000;
+  font-size:14px;font-weight:800;cursor:pointer;
+  margin-top:4px;
+}
+.email-login button:active{opacity:0.8}
+.email-login .auth-error{font-size:11px;color:var(--danger);text-align:center;margin-top:8px;min-height:16px}
+.email-login .auth-switch{font-size:11px;color:var(--dim2);text-align:center;margin-top:12px}
+.email-login .auth-switch a{color:var(--accent);cursor:pointer;text-decoration:none}
+
+/* ═══ SECURITY BADGE ═══ */
+.security-badge{
+  display:inline-flex;align-items:center;gap:4px;
+  font-size:9px;color:var(--accent);background:var(--accent-dim);
+  padding:2px 8px;border-radius:10px;margin-left:8px;
+}
+
 /* ═══ BOTTOM TAB BAR ═══ */
 .tab-bar{
   display:flex;background:var(--card);
@@ -522,6 +550,13 @@ body{
 <div id="login-screen">
   <div class="login-logo">Navi <span>HQ</span></div>
   <div class="login-sub">AI Command Centre</div>
+  <!-- Auth mode toggle -->
+  <div id="auth-mode-toggle" style="margin-bottom:16px;display:flex;gap:8px">
+    <button onclick="showPinLogin()" id="btn-pin-mode" style="flex:1;padding:8px;border-radius:8px;border:1px solid var(--accent);background:var(--accent-dim);color:var(--accent);font-size:11px;font-weight:600;cursor:pointer">PIN</button>
+    <button onclick="showEmailLogin()" id="btn-email-mode" style="flex:1;padding:8px;border-radius:8px;border:1px solid var(--border);background:var(--card);color:var(--dim2);font-size:11px;font-weight:600;cursor:pointer">Email Login</button>
+  </div>
+  <!-- PIN login (default) -->
+  <div id="pin-login">
   <div class="pin-wrap">
     <input type="password" id="pin-input" maxlength="6" inputmode="numeric" autocomplete="off" placeholder="">
   </div>
@@ -530,6 +565,17 @@ body{
     <div class="pin-dot"></div><div class="pin-dot"></div>
   </div>
   <div id="login-error"></div>
+  </div>
+  <!-- Email login -->
+  <div id="email-login" class="email-login">
+    <input type="email" id="auth-email" placeholder="Email" autocomplete="email" />
+    <input type="password" id="auth-password" placeholder="Password" autocomplete="current-password" />
+    <button onclick="emailLogin()">Sign In</button>
+    <div class="auth-error" id="auth-error"></div>
+    <div class="auth-switch">
+      No account? <a onclick="emailSignup()">Sign up</a>
+    </div>
+  </div>
 </div>
 
 <!-- ═══ FILE BROWSER MODAL ═══ -->
@@ -704,6 +750,18 @@ body{
         <div style="font-size:10px;color:var(--dim)">Listener polls Supabase every 3s</div>
       </div>
 
+      <div class="sec">Security</div>
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:14px;margin-bottom:12px">
+        <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px">
+          <span style="font-size:13px;font-weight:600" id="auth-status-text">PIN auth</span>
+          <span class="security-badge" id="auth-badge">basic</span>
+        </div>
+        <div style="font-size:10px;color:var(--dim);line-height:1.6" id="security-info">
+          PIN login: client-side only<br>
+          Switch to Email login for Supabase Auth + encryption
+        </div>
+      </div>
+
       <div class="sec">About</div>
       <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:14px;margin-bottom:12px">
         <div style="font-size:13px;font-weight:700;margin-bottom:4px">Navi HQ v3</div>
@@ -824,9 +882,124 @@ const MAX_POLLS = 150;
 const RATE_LIMIT = [];
 
 // ═══ AUTH ═══
+let authSession = null; // Supabase auth session
+let encryptionKey = null; // AES-256 key for command encryption
+
 async function hashPin(pin){
   const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(pin));
   return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+
+// Generate/load encryption key from password
+async function deriveEncKey(password){
+  const enc = new TextEncoder();
+  const keyMaterial = await crypto.subtle.importKey('raw', enc.encode(password), 'PBKDF2', false, ['deriveKey']);
+  return crypto.subtle.deriveKey(
+    {name:'PBKDF2', salt:enc.encode('navi-hq-salt'), iterations:100000, hash:'SHA-256'},
+    keyMaterial, {name:'AES-GCM', length:256}, false, ['encrypt','decrypt']
+  );
+}
+
+// Encrypt command before sending
+async function encryptCmd(text){
+  if(!encryptionKey) return text; // Fallback: no encryption
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const enc = new TextEncoder();
+  const encrypted = await crypto.subtle.encrypt({name:'AES-GCM',iv}, encryptionKey, enc.encode(text));
+  const combined = new Uint8Array(iv.length + encrypted.byteLength);
+  combined.set(iv); combined.set(new Uint8Array(encrypted), iv.length);
+  return 'ENC::' + btoa(String.fromCharCode(...combined));
+}
+
+// Auth mode switching
+function showPinLogin(){
+  document.getElementById('pin-login').style.display='block';
+  document.getElementById('email-login').style.display='none';
+  document.getElementById('btn-pin-mode').style.borderColor='var(--accent)';
+  document.getElementById('btn-pin-mode').style.background='var(--accent-dim)';
+  document.getElementById('btn-pin-mode').style.color='var(--accent)';
+  document.getElementById('btn-email-mode').style.borderColor='var(--border)';
+  document.getElementById('btn-email-mode').style.background='var(--card)';
+  document.getElementById('btn-email-mode').style.color='var(--dim2)';
+}
+function showEmailLogin(){
+  document.getElementById('pin-login').style.display='none';
+  document.getElementById('email-login').style.display='block';
+  document.getElementById('btn-email-mode').style.borderColor='var(--accent)';
+  document.getElementById('btn-email-mode').style.background='var(--accent-dim)';
+  document.getElementById('btn-email-mode').style.color='var(--accent)';
+  document.getElementById('btn-pin-mode').style.borderColor='var(--border)';
+  document.getElementById('btn-pin-mode').style.background='var(--card)';
+  document.getElementById('btn-pin-mode').style.color='var(--dim2)';
+}
+
+// Email/password login via Supabase Auth
+async function emailLogin(){
+  const email = document.getElementById('auth-email').value.trim();
+  const pass = document.getElementById('auth-password').value;
+  const errEl = document.getElementById('auth-error');
+  if(!email||!pass){errEl.textContent='Enter email and password';return;}
+  errEl.textContent='Signing in...';
+  try{
+    const r = await fetch(SB_URL+'/auth/v1/token?grant_type=password',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','apikey':CONFIG.supabase_anon_key},
+      body:JSON.stringify({email,password:pass})
+    });
+    const d = await r.json();
+    if(d.access_token){
+      authSession = d;
+      // Update headers to use auth token
+      SB_HDR['Authorization'] = 'Bearer '+d.access_token;
+      // Derive encryption key from password
+      encryptionKey = await deriveEncKey(pass);
+      // Store session
+      sessionStorage.setItem('nhq_auth',JSON.stringify({token:d.access_token,refresh:d.refresh_token}));
+      sessionStorage.setItem('nhq_ok','1');
+      errEl.textContent='';
+      document.getElementById('login-screen').classList.add('hidden');
+      setTimeout(()=>{document.getElementById('app').classList.add('visible');init();},200);
+    } else {
+      errEl.textContent = d.error_description || d.msg || 'Login failed';
+      if(navigator.vibrate) navigator.vibrate(200);
+    }
+  }catch(e){errEl.textContent='Network error';}
+}
+
+// Email signup
+async function emailSignup(){
+  const email = document.getElementById('auth-email').value.trim();
+  const pass = document.getElementById('auth-password').value;
+  const errEl = document.getElementById('auth-error');
+  if(!email||!pass){errEl.textContent='Enter email and password';return;}
+  if(pass.length<6){errEl.textContent='Password must be 6+ characters';return;}
+  errEl.textContent='Creating account...';
+  try{
+    const r = await fetch(SB_URL+'/auth/v1/signup',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','apikey':CONFIG.supabase_anon_key},
+      body:JSON.stringify({email,password:pass})
+    });
+    const d = await r.json();
+    if(d.id){
+      errEl.textContent='Account created! Check email to confirm, then sign in.';
+      errEl.style.color='var(--accent)';
+    } else {
+      errEl.textContent = d.error_description || d.msg || 'Signup failed';
+    }
+  }catch(e){errEl.textContent='Network error';}
+}
+
+// Restore session on page load
+async function restoreAuthSession(){
+  const stored = sessionStorage.getItem('nhq_auth');
+  if(stored){
+    try{
+      const s = JSON.parse(stored);
+      SB_HDR['Authorization'] = 'Bearer '+s.token;
+      authSession = s;
+    }catch(e){}
+  }
 }
 
 const pinInput = document.getElementById('pin-input');
@@ -834,10 +1007,8 @@ const pinDots = document.querySelectorAll('.pin-dot');
 
 pinInput.addEventListener('input', async ()=>{
   const val = pinInput.value;
-  // Update dots
   pinDots.forEach((d,i)=> d.classList.toggle('filled', i < val.length));
 
-  // Auto-submit at 4 digits
   if(val.length >= 4){
     const hash = await hashPin(val);
     if(hash === CONFIG.pin_hash){
@@ -863,6 +1034,10 @@ pinInput.addEventListener('input', async ()=>{
 
 function logout(){
   sessionStorage.removeItem('nhq_ok');
+  sessionStorage.removeItem('nhq_auth');
+  authSession=null;encryptionKey=null;
+  // Reset auth header to anon
+  SB_HDR['Authorization']='Bearer '+CONFIG.supabase_anon_key;
   document.getElementById('app').classList.remove('visible');
   setTimeout(()=>{
     document.getElementById('login-screen').classList.remove('hidden');
@@ -873,6 +1048,7 @@ function logout(){
 
 // Auto-login
 if(sessionStorage.getItem('nhq_ok')==='1'){
+  restoreAuthSession();
   document.getElementById('login-screen').classList.add('hidden');
   document.getElementById('app').classList.add('visible');
   setTimeout(init, 100);
@@ -1046,10 +1222,12 @@ async function sendDirect(cmd,project,tool){
   const btn=document.getElementById('cmd-send');
   btn.disabled=true;
   try{
+    // Encrypt command if key is available
+    const encCmd = encryptionKey ? await encryptCmd(cmd) : cmd;
     const r=await fetch(SB_URL+'/rest/v1/commands',{
       method:'POST',
       headers:{...SB_HDR,'Prefer':'return=representation'},
-      body:JSON.stringify({command:cmd,project:project||'general',tool:tool||'claude-code',secret:CONFIG.shared_secret})
+      body:JSON.stringify({command:encCmd,project:project||'general',tool:tool||'claude-code',secret:CONFIG.shared_secret})
     });
     if(r.ok){
       toast('Command sent');
