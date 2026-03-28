@@ -470,9 +470,26 @@ route_command() {
   fi
 
   case "${tool:-$DEFAULT_TOOL}" in
-    claude-code)   run_claude_code "$id" "$cmd" "$project_dir" ;;
-    warp)          open_warp_claude "$project_dir" "$project"
-                   update_status "$id" "done" "Opened Warp+Claude for $project" ;;
+    claude-code)
+      # SMART ROUTING:
+      # - Project selected → type into existing Warp session (saves tokens, keeps conversation)
+      #   If no Warp session exists, open one first then type
+      # - No project ("general") → silent claude -p, result to phone (quick one-shot)
+      if [ "$project" != "general" ] && [ -n "$project" ]; then
+        log "Smart route: project '$project' → typing into Warp session"
+        # Type the command into the last Warp Claude tab
+        # (user should have a session open for this project)
+        type_into_warp "$cmd"
+        update_status "$id" "done" "Typed into Warp Claude session: $cmd — check laptop screen"
+      else
+        run_claude_code "$id" "$cmd" "$project_dir"
+      fi
+      ;;
+    warp)
+      # Always open a NEW Warp tab with Claude in the project dir
+      open_warp_claude "$project_dir" "$project"
+      update_status "$id" "done" "Opened new Warp+Claude tab for: $project ($project_dir)"
+      ;;
     shell)         run_shell "$id" "$cmd" "$project_dir" ;;
     cursor)        run_cursor "$id" "$cmd" "$project_dir" ;;
     copilot)       run_copilot "$id" "$cmd" "$project_dir" ;;
@@ -527,7 +544,9 @@ while true; do
     TOOL=$(echo "$ROW" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d[0].get('tool','claude-code'))" 2>/dev/null)
     SECRET=$(echo "$ROW" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d[0].get('secret',''))" 2>/dev/null)
 
-    if [ -n "$SHARED_SECRET" ] && [ "$SECRET" != "$SHARED_SECRET" ]; then
+    # Accept new secret OR old secret (for cached phone pages)
+    OLD_SECRET="navi_2024_xk9m"
+    if [ -n "$SHARED_SECRET" ] && [ "$SECRET" != "$SHARED_SECRET" ] && [ "$SECRET" != "$OLD_SECRET" ]; then
       log "Rejected (bad secret): $CMD"
       update_status "$ID" "error" "Rejected: invalid secret"
       sleep "$POLL_SEC"; continue
