@@ -1165,13 +1165,13 @@ function renderMacActions(){
   const grid = document.getElementById('mac-grid');
   grid.innerHTML='';
   const apps = [
-    {key:'open chrome',brand:'chrome',lbl:'Chrome',bg:'linear-gradient(135deg,#4285f4,#34a853)'},
-    {key:'open safari',brand:'safari',lbl:'Safari',bg:'linear-gradient(135deg,#007aff,#5ac8fa)'},
-    {key:'open warp',brand:'warp',lbl:'Warp',bg:'linear-gradient(135deg,#01a4e4,#0165d1)'},
-    {key:'open finder',brand:'finder',lbl:'Finder',bg:'linear-gradient(135deg,#007aff,#5856d6)'},
-    {key:'open vscode',brand:'vscode',lbl:'VS Code',bg:'linear-gradient(135deg,#0078d4,#2b88d8)'},
-    {key:'lock',brand:'lock',lbl:'Lock',bg:'linear-gradient(135deg,#ff6b6b,#ee5a24)'},
-    {key:'screenshot',brand:'camera',lbl:'Screenshot',bg:'linear-gradient(135deg,#a29bfe,#6c5ce7)'},
+    {key:'open chrome',brand:'chrome',lbl:'Chrome',bg:'linear-gradient(135deg,#e8453c,#f9a825)'},
+    {key:'open safari',brand:'safari',lbl:'Safari',bg:'linear-gradient(135deg,#006cff,#00d4ff)'},
+    {key:'open warp',brand:'warp',lbl:'Warp',bg:'linear-gradient(135deg,#01a4e4,#1e3a5f)'},
+    {key:'open finder',brand:'finder',lbl:'Finder',bg:'linear-gradient(135deg,#1e90ff,#4169e1)'},
+    {key:'open vscode',brand:'vscode',lbl:'VS Code',bg:'linear-gradient(135deg,#007acc,#0065a9)'},
+    {key:'lock',brand:'lock',lbl:'Lock',bg:'linear-gradient(135deg,#ff3b30,#c0392b)'},
+    {key:'screenshot',brand:'camera',lbl:'Screenshot',bg:'linear-gradient(135deg,#9b59b6,#8e44ad)'},
   ];
   apps.forEach(a=>{
     if(!CONFIG.mac_actions[a.key])return;
