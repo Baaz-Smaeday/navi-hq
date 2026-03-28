@@ -1298,8 +1298,8 @@ async function sendDirect(cmd,project,tool,silent=false){
     if(r.ok){
       if(!silent){
         toast('Command sent');
-        showResult('Waiting for response...',null,true);
-        startPolling();
+        showResult('Claude is working...',null,true);
+        startLiveStream();
       }
       loadHistory();
     } else toast('Failed to send',true);
@@ -1359,6 +1359,36 @@ function renderMd(text){
   // Line breaks
   h=h.replace(/\n/g,'<br>');
   return h;
+}
+
+// ═══ LIVE STREAMING VIEW ═══
+function startLiveStream(){
+  const body=document.getElementById('result-body');
+  const title=document.getElementById('result-title');
+  let streamPoll=setInterval(async()=>{
+    try{
+      const r=await fetch(SB_URL+'/rest/v1/commands?order=created_at.desc&limit=1',{headers:SB_HDR});
+      const d=await r.json();
+      if(d.length>0){
+        const c=d[0];
+        if(c.status==='running'&&c.result){
+          body.innerHTML=renderMd(c.result);
+          body.scrollTop=body.scrollHeight;
+          title.textContent='Live — Claude is working...';
+          title.style.color='var(--warn)';
+        }
+        if(c.status==='done'||c.status==='error'){
+          body.innerHTML=renderMd(c.result||'Done');
+          title.textContent=c.status==='error'?'Error':'Complete';
+          title.style.color=c.status==='error'?'var(--danger)':'var(--accent)';
+          clearInterval(streamPoll);
+          loadHistory();
+        }
+      }
+    }catch(e){}
+  },1500);
+  // Auto-stop after 5 min
+  setTimeout(()=>clearInterval(streamPoll),300000);
 }
 
 function showResult(text,time,streaming=false,isError=false){
