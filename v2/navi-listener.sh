@@ -1243,7 +1243,16 @@ while true; do
       -H "Content-Type: application/json" \
       -d "{\"status\":\"running\",\"laptop_id\":\"${LISTENER_ID}\"}" > /dev/null 2>&1
 
+    # Show macOS notification when command arrives from phone
+    osascript -e "display notification \"${CMD:0:80}\" with title \"Navi HQ\" subtitle \"${PROJ} → ${TOOL}\"" 2>/dev/null &
+
     route_command "$ID" "$CMD" "$PROJ" "$TOOL"
+
+    # Show result notification on laptop
+    local result_preview; result_preview=$(curl -s "${SB_URL}/rest/v1/commands?id=eq.${ID}&select=result,status" \
+      -H "apikey: ${SB_KEY}" -H "Authorization: Bearer ${SB_KEY}" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d[0].get('result','Done')[:100] if d else 'Done')" 2>/dev/null)
+    osascript -e "display notification \"${result_preview:0:100}\" with title \"Navi HQ\" subtitle \"Result\"" 2>/dev/null &
+
     log "Done."
     echo ""
   fi
