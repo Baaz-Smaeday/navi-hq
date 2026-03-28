@@ -311,8 +311,16 @@ body{
     <div class="proj-list" id="proj-list"></div>
 
     <!-- Quick Actions -->
-    <div class="sec">Quick Actions</div>
+    <div class="sec">Apps</div>
     <div class="mac-grid" id="mac-grid"></div>
+
+    <!-- Dev Shortcuts -->
+    <div class="sec">Dev Shortcuts</div>
+    <div class="mac-grid" id="dev-grid"></div>
+
+    <!-- AI Quick Launch -->
+    <div class="sec">AI Quick Launch</div>
+    <div class="mac-grid" id="ai-grid"></div>
 
     <!-- History -->
     <div class="sec">Recent</div>
@@ -330,9 +338,14 @@ body{
       <select class="cmd-sel" id="sel-project"><option value="general">All Projects</option></select>
       <select class="cmd-sel" id="sel-tool">
         <option value="claude-code">Claude Code</option>
-        <option value="cursor">Cursor</option>
-        <option value="shell">Shell</option>
+        <option value="warp">Warp + Claude</option>
+        <option value="cursor">Cursor AI</option>
         <option value="copilot">Copilot</option>
+        <option value="chatgpt">ChatGPT</option>
+        <option value="gemini">Gemini</option>
+        <option value="claude-web">Claude Web</option>
+        <option value="aider">Aider</option>
+        <option value="shell">Shell</option>
       </select>
     </div>
     <div class="cmd-row">
@@ -600,8 +613,9 @@ function quickAction(project, action){
   sendDirect(action, project, 'claude-code');
 }
 
-// ═══ MAC ACTIONS ═══
+// ═══ QUICK ACTION GRIDS ═══
 function renderMacActions(){
+  // Apps grid
   const grid = document.getElementById('mac-grid');
   grid.innerHTML='';
   const icons = {
@@ -618,6 +632,48 @@ function renderMacActions(){
     btn.onclick = ()=> sendDirect(key,'general','shell');
     btn.innerHTML=`<div class="mac-ico">${icons[key]||'&#9889;'}</div><div class="mac-lbl">${labels[key]||key}</div>`;
     grid.appendChild(btn);
+  });
+
+  // Dev shortcuts grid
+  const devGrid = document.getElementById('dev-grid');
+  devGrid.innerHTML='';
+  const devActions = [
+    {ico:'&#128736;',lbl:'Git Status',cmd:'git status',tool:'shell'},
+    {ico:'&#8595;',lbl:'Git Pull',cmd:'git pull',tool:'shell'},
+    {ico:'&#8593;',lbl:'Git Push',cmd:'git push',tool:'shell'},
+    {ico:'&#128220;',lbl:'Git Log',cmd:'git log --oneline -10',tool:'shell'},
+    {ico:'&#9889;',lbl:'NPM Test',cmd:'npm test',tool:'shell'},
+    {ico:'&#128230;',lbl:'NPM Build',cmd:'npm run build',tool:'shell'},
+    {ico:'&#128187;',lbl:'NPM Dev',cmd:'npm run dev',tool:'shell'},
+    {ico:'&#128269;',lbl:'Disk Space',cmd:'df -h /',tool:'shell'},
+  ];
+  devActions.forEach(a=>{
+    const btn = document.createElement('div');
+    btn.className='mac-btn';
+    btn.onclick = ()=> sendDirect(a.cmd, document.getElementById('sel-project').value, a.tool);
+    btn.innerHTML=`<div class="mac-ico">${a.ico}</div><div class="mac-lbl">${a.lbl}</div>`;
+    devGrid.appendChild(btn);
+  });
+
+  // AI quick launch grid
+  const aiGrid = document.getElementById('ai-grid');
+  aiGrid.innerHTML='';
+  const aiActions = [
+    {ico:'&#129302;',lbl:'New Claude',cmd:'new claude chat',tool:'claude-code'},
+    {ico:'&#128421;',lbl:'Warp+Claude',cmd:'new warp',tool:'warp'},
+    {ico:'&#128172;',lbl:'ChatGPT',cmd:'Hello',tool:'chatgpt'},
+    {ico:'&#10024;',lbl:'Gemini',cmd:'Hello',tool:'gemini'},
+    {ico:'&#127913;',lbl:'Cursor AI',cmd:'Hello',tool:'cursor'},
+    {ico:'&#128640;',lbl:'Claude Web',cmd:'Hello',tool:'claude-web'},
+    {ico:'&#9881;',lbl:'Copilot',cmd:'Hello',tool:'copilot'},
+    {ico:'&#128295;',lbl:'Health Check',cmd:'Check all project health and report',tool:'claude-code'},
+  ];
+  aiActions.forEach(a=>{
+    const btn = document.createElement('div');
+    btn.className='mac-btn';
+    btn.onclick = ()=> sendDirect(a.cmd, document.getElementById('sel-project').value, a.tool);
+    btn.innerHTML=`<div class="mac-ico">${a.ico}</div><div class="mac-lbl">${a.lbl}</div>`;
+    aiGrid.appendChild(btn);
   });
 }
 
