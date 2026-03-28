@@ -96,13 +96,16 @@ body{
 /* ═══ STATS ROW ═══ */
 .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:14px 0}
 .stat{
-  background:var(--card);border-radius:var(--radius);
-  padding:14px 8px;text-align:center;
-  border:1px solid var(--border);
+  border-radius:var(--radius);
+  padding:16px 8px;text-align:center;
+  border:none;position:relative;overflow:hidden;
 }
-.stat-val{font-size:28px;font-weight:800;line-height:1}
-.stat-lbl{font-size:9px;color:var(--dim2);text-transform:uppercase;letter-spacing:1.2px;margin-top:4px;font-weight:600}
-.c-green{color:var(--accent)}.c-blue{color:var(--accent2)}.c-warn{color:var(--warn)}.c-red{color:var(--danger)}
+.stat-val{font-size:28px;font-weight:800;line-height:1;color:#fff}
+.stat-lbl{font-size:9px;color:rgba(255,255,255,0.7);text-transform:uppercase;letter-spacing:1.2px;margin-top:4px;font-weight:600}
+.stat-green{background:linear-gradient(135deg,#00c853,#00e676)}
+.stat-red{background:linear-gradient(135deg,#d32f2f,#ff5252)}
+.stat-blue{background:linear-gradient(135deg,#0091ea,#00b0ff)}
+.stat-orange{background:linear-gradient(135deg,#ef6c00,#ffab40)}
 
 /* ═══ SECTION ═══ */
 .sec{font-size:11px;font-weight:700;color:var(--dim);text-transform:uppercase;letter-spacing:1.5px;margin:20px 0 10px}
@@ -123,11 +126,11 @@ body{
   background:var(--accent);border-radius:0 3px 3px 0;
 }
 .proj-icon{
-  width:40px;height:40px;border-radius:10px;
-  background:var(--accent-dim);
+  width:44px;height:44px;border-radius:12px;
   display:flex;align-items:center;justify-content:center;
-  font-size:18px;font-weight:800;color:var(--accent);
+  font-size:18px;font-weight:800;color:#fff;
   flex-shrink:0;
+  box-shadow:0 2px 8px rgba(0,0,0,0.3);
 }
 .proj-body{flex:1;min-width:0}
 .proj-name{font-size:15px;font-weight:700}
@@ -143,17 +146,23 @@ body{
 }
 .qa-btn:active{background:var(--accent);color:#000}
 
-/* ═══ MAC ACTIONS GRID ═══ */
-.mac-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+/* ═══ MAC ACTIONS GRID (iOS Style) ═══ */
+.mac-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
 .mac-btn{
-  background:var(--card);border:1px solid var(--border);
-  border-radius:var(--radius);padding:14px 4px;
-  text-align:center;cursor:pointer;
-  transition:all 0.15s;-webkit-user-select:none;user-select:none;
+  background:transparent;border:none;
+  padding:8px 4px;text-align:center;cursor:pointer;
+  transition:all 0.2s;-webkit-user-select:none;user-select:none;
+  border-radius:16px;
 }
-.mac-btn:active{transform:scale(0.95);border-color:var(--accent);background:#0a1a0f}
-.mac-ico{font-size:24px;margin-bottom:4px}
-.mac-lbl{font-size:9px;color:var(--dim2);font-weight:600;text-transform:uppercase;letter-spacing:0.5px}
+.mac-btn:active{transform:scale(0.88);opacity:0.7}
+.mac-ico{
+  width:52px;height:52px;border-radius:14px;
+  display:flex;align-items:center;justify-content:center;
+  margin:0 auto 6px;color:#fff;
+  box-shadow:0 2px 8px rgba(0,0,0,0.3);
+}
+.mac-ico i,.mac-ico svg{width:24px;height:24px}
+.mac-lbl{font-size:10px;color:var(--text2);font-weight:500;letter-spacing:0.2px}
 
 /* ═══ RESULT PANEL ═══ */
 .result{
@@ -514,20 +523,23 @@ body{
 
 /* ═══ BOTTOM TAB BAR ═══ */
 .tab-bar{
-  display:flex;background:var(--card);
-  border-top:1px solid var(--border);
-  padding:6px 0 calc(6px + var(--safe-bottom));
+  display:flex;
+  background:rgba(20,20,20,0.85);
+  backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
+  border-top:1px solid rgba(255,255,255,0.06);
+  padding:4px 0 calc(4px + var(--safe-bottom));
   z-index:50;flex-shrink:0;
 }
 .tab-item{
   flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;
-  padding:6px 0;cursor:pointer;transition:all 0.15s;
+  padding:6px 0;cursor:pointer;transition:all 0.2s;
   -webkit-user-select:none;user-select:none;
 }
 .tab-item.active{color:var(--accent)}
-.tab-item:not(.active){color:var(--dim)}
-.tab-ico{font-size:20px;line-height:1}
-.tab-lbl{font-size:9px;font-weight:600;letter-spacing:0.3px}
+.tab-item:not(.active){color:var(--dim2)}
+.tab-ico{line-height:1}
+.tab-ico i,.tab-ico svg{width:22px;height:22px}
+.tab-lbl{font-size:10px;font-weight:600;letter-spacing:0.2px}
 .tab-page{display:none}
 .tab-page.active{display:block}
 
@@ -680,10 +692,10 @@ body{
     <!-- ═══ TAB: DASHBOARD ═══ -->
     <div class="tab-page active" id="page-dashboard">
       <div class="stats">
-        <div class="stat"><div class="stat-val c-green" id="n-live">0</div><div class="stat-lbl">Live</div></div>
-        <div class="stat"><div class="stat-val c-red" id="n-issues">0</div><div class="stat-lbl">Issues</div></div>
-        <div class="stat"><div class="stat-val c-blue" id="n-projects">0</div><div class="stat-lbl">Projects</div></div>
-        <div class="stat"><div class="stat-val c-warn" id="n-cmds">0</div><div class="stat-lbl">Commands</div></div>
+        <div class="stat stat-green"><div class="stat-val" id="n-live">0</div><div class="stat-lbl">Live</div></div>
+        <div class="stat stat-red"><div class="stat-val" id="n-issues">0</div><div class="stat-lbl">Issues</div></div>
+        <div class="stat stat-blue"><div class="stat-val" id="n-projects">0</div><div class="stat-lbl">Projects</div></div>
+        <div class="stat stat-orange"><div class="stat-val" id="n-cmds">0</div><div class="stat-lbl">Commands</div></div>
       </div>
 
       <div class="result" id="result-panel">
@@ -715,10 +727,10 @@ body{
 
       <div class="sec">Power Tools</div>
       <div class="mac-grid">
-        <div class="mac-btn" onclick="runPowerCmd('screenshot')"><div class="mac-ico"><i data-lucide="camera" style="width:22px;height:22px"></i></div><div class="mac-lbl">Screenshot</div></div>
-        <div class="mac-btn" onclick="runPowerCmd('clipboard_get')"><div class="mac-ico"><i data-lucide="clipboard" style="width:22px;height:22px"></i></div><div class="mac-lbl">Get Clipboard</div></div>
-        <div class="mac-btn" onclick="promptClipboardSet()"><div class="mac-ico"><i data-lucide="clipboard-edit" style="width:22px;height:22px"></i></div><div class="mac-lbl">Set Clipboard</div></div>
-        <div class="mac-btn" onclick="runPowerCmd('sysinfo')"><div class="mac-ico"><i data-lucide="cpu" style="width:22px;height:22px"></i></div><div class="mac-lbl">System Info</div></div>
+        <div class="mac-btn" onclick="runPowerCmd('screenshot')"><div class="mac-ico" style="background:linear-gradient(135deg,#a29bfe,#6c5ce7)"><i data-lucide="camera"></i></div><div class="mac-lbl">Screenshot</div></div>
+        <div class="mac-btn" onclick="runPowerCmd('clipboard_get')"><div class="mac-ico" style="background:linear-gradient(135deg,#55efc4,#00b894)"><i data-lucide="clipboard"></i></div><div class="mac-lbl">Get Clipboard</div></div>
+        <div class="mac-btn" onclick="promptClipboardSet()"><div class="mac-ico" style="background:linear-gradient(135deg,#fd79a8,#e84393)"><i data-lucide="clipboard-edit"></i></div><div class="mac-lbl">Set Clipboard</div></div>
+        <div class="mac-btn" onclick="runPowerCmd('sysinfo')"><div class="mac-ico" style="background:linear-gradient(135deg,#636e72,#2d3436)"><i data-lucide="cpu"></i></div><div class="mac-lbl">System Info</div></div>
       </div>
 
       <div class="sec">Pipeline</div>
@@ -1078,6 +1090,8 @@ function renderProjects(){
     card.onclick = ()=> selectProject(slug);
 
     const initial = p.name.charAt(0).toUpperCase();
+    const projColors = ['linear-gradient(135deg,#4285f4,#34a853)','linear-gradient(135deg,#ef4444,#f97316)','linear-gradient(135deg,#8b5cf6,#a78bfa)','linear-gradient(135deg,#06b6d4,#22d3ee)','linear-gradient(135deg,#ec4899,#f472b6)','linear-gradient(135deg,#f59e0b,#fbbf24)','linear-gradient(135deg,#10b981,#34d399)'];
+    const projBg = projColors[Object.keys(CONFIG.projects).indexOf(slug) % projColors.length];
     const tags = (p.tags||[]).map(t=>`<span class="tag">${t}</span>`).join('');
     const url = p.url ? `<div class="proj-url">${p.url.replace('https://','')}</div>` : '';
     const actions = (p.quick_actions||[]).map(a=>
@@ -1097,7 +1111,7 @@ function renderProjects(){
     const healthMs = p.url ? `<span class="health-ms" id="hms-${slug}">...</span>` : '';
 
     card.innerHTML=`
-      <div class="proj-icon">${initial}</div>
+      <div class="proj-icon" style="background:${projBg}">${initial}</div>
       <div class="proj-body">
         <div style="display:flex;align-items:center;gap:6px">
           <div class="proj-name">${esc(p.name)}</div>
@@ -1127,77 +1141,75 @@ function quickAction(project, action){
 }
 
 // ═══ QUICK ACTION GRIDS ═══
-function lucideIcon(name,size=22){return `<i data-lucide="${name}" style="width:${size}px;height:${size}px"></i>`;}
+function li(name){return `<i data-lucide="${name}"></i>`;}
 function renderMacActions(){
-  // Apps grid
+  // Apps grid — iOS style with colored icon backgrounds
   const grid = document.getElementById('mac-grid');
   grid.innerHTML='';
-  const icons = {
-    'open chrome':lucideIcon('globe'),'open safari':lucideIcon('compass'),'open warp':lucideIcon('square-terminal'),
-    'open finder':lucideIcon('folder'),'open vscode':lucideIcon('file-code'),'lock':lucideIcon('lock'),'screenshot':lucideIcon('camera')
-  };
-  const labels = {
-    'open chrome':'Chrome','open safari':'Safari','open warp':'Warp',
-    'open finder':'Finder','open vscode':'VS Code','lock':'Lock','screenshot':'Screenshot'
-  };
-  Object.keys(CONFIG.mac_actions).forEach(key=>{
-    const btn = document.createElement('div');
-    btn.className='mac-btn';
-    btn.onclick = ()=> sendDirect(key,'general','shell');
-    btn.innerHTML=`<div class="mac-ico">${icons[key]||lucideIcon('zap')}</div><div class="mac-lbl">${labels[key]||key}</div>`;
+  const apps = [
+    {key:'open chrome',ico:'globe',lbl:'Chrome',bg:'linear-gradient(135deg,#4285f4,#34a853)'},
+    {key:'open safari',ico:'compass',lbl:'Safari',bg:'linear-gradient(135deg,#007aff,#5ac8fa)'},
+    {key:'open warp',ico:'square-terminal',lbl:'Warp',bg:'linear-gradient(135deg,#1a1a2e,#16213e)'},
+    {key:'open finder',ico:'folder',lbl:'Finder',bg:'linear-gradient(135deg,#007aff,#5856d6)'},
+    {key:'open vscode',ico:'file-code',lbl:'VS Code',bg:'linear-gradient(135deg,#0078d4,#2b88d8)'},
+    {key:'lock',ico:'lock',lbl:'Lock',bg:'linear-gradient(135deg,#ff6b6b,#ee5a24)'},
+    {key:'screenshot',ico:'camera',lbl:'Screenshot',bg:'linear-gradient(135deg,#a29bfe,#6c5ce7)'},
+  ];
+  apps.forEach(a=>{
+    if(!CONFIG.mac_actions[a.key])return;
+    const btn=document.createElement('div');btn.className='mac-btn';
+    btn.onclick=()=>sendDirect(a.key,'general','shell');
+    btn.innerHTML=`<div class="mac-ico" style="background:${a.bg}">${li(a.ico)}</div><div class="mac-lbl">${a.lbl}</div>`;
     grid.appendChild(btn);
   });
 
-  // Dev shortcuts grid
+  // Dev shortcuts
   const devGrid = document.getElementById('dev-grid');
   devGrid.innerHTML='';
-  const devActions = [
-    {ico:lucideIcon('git-branch'),lbl:'Git Status',cmd:'git status',tool:'shell'},
-    {ico:lucideIcon('download'),lbl:'Git Pull',cmd:'git pull',tool:'shell'},
-    {ico:lucideIcon('upload'),lbl:'Git Push',cmd:'git push',tool:'shell'},
-    {ico:lucideIcon('list'),lbl:'Git Log',cmd:'git log --oneline -10',tool:'shell'},
-    {ico:lucideIcon('check-circle'),lbl:'NPM Test',cmd:'npm test',tool:'shell'},
-    {ico:lucideIcon('package'),lbl:'NPM Build',cmd:'npm run build',tool:'shell'},
-    {ico:lucideIcon('play'),lbl:'NPM Dev',cmd:'npm run dev &',tool:'shell'},
-    {ico:lucideIcon('hard-drive'),lbl:'Disk Space',cmd:'df -h /',tool:'shell'},
-    {ico:lucideIcon('rocket'),lbl:'Deploy',cmd:'git add . && git commit -m "deploy" && git push && vercel --prod',tool:'shell'},
-    {ico:lucideIcon('file-text'),lbl:'Env Vars',cmd:'cat .env | head -20',tool:'shell'},
-    {ico:lucideIcon('activity'),lbl:'Processes',cmd:'ps aux | head -20',tool:'shell'},
-    {ico:lucideIcon('wifi'),lbl:'IP Address',cmd:'curl -s ifconfig.me',tool:'shell'},
+  const devs = [
+    {ico:'git-branch',lbl:'Git Status',cmd:'git status',bg:'linear-gradient(135deg,#f97316,#ea580c)'},
+    {ico:'download',lbl:'Git Pull',cmd:'git pull',bg:'linear-gradient(135deg,#22c55e,#16a34a)'},
+    {ico:'upload',lbl:'Git Push',cmd:'git push',bg:'linear-gradient(135deg,#3b82f6,#2563eb)'},
+    {ico:'list',lbl:'Git Log',cmd:'git log --oneline -10',bg:'linear-gradient(135deg,#8b5cf6,#7c3aed)'},
+    {ico:'check-circle',lbl:'NPM Test',cmd:'npm test',bg:'linear-gradient(135deg,#10b981,#059669)'},
+    {ico:'package',lbl:'NPM Build',cmd:'npm run build',bg:'linear-gradient(135deg,#f59e0b,#d97706)'},
+    {ico:'play',lbl:'NPM Dev',cmd:'npm run dev &',bg:'linear-gradient(135deg,#06b6d4,#0891b2)'},
+    {ico:'hard-drive',lbl:'Disk Space',cmd:'df -h /',bg:'linear-gradient(135deg,#64748b,#475569)'},
+    {ico:'rocket',lbl:'Deploy',cmd:'git add . && git commit -m "deploy" && git push && vercel --prod',bg:'linear-gradient(135deg,#ef4444,#dc2626)'},
+    {ico:'file-text',lbl:'Env Vars',cmd:'cat .env | head -20',bg:'linear-gradient(135deg,#ec4899,#db2777)'},
+    {ico:'activity',lbl:'Processes',cmd:'ps aux | head -20',bg:'linear-gradient(135deg,#14b8a6,#0d9488)'},
+    {ico:'wifi',lbl:'IP Address',cmd:'curl -s ifconfig.me',bg:'linear-gradient(135deg,#6366f1,#4f46e5)'},
   ];
-  devActions.forEach(a=>{
-    const btn = document.createElement('div');
-    btn.className='mac-btn';
-    btn.onclick = ()=> sendDirect(a.cmd, document.getElementById('sel-project').value, a.tool);
-    btn.innerHTML=`<div class="mac-ico">${a.ico}</div><div class="mac-lbl">${a.lbl}</div>`;
+  devs.forEach(a=>{
+    const btn=document.createElement('div');btn.className='mac-btn';
+    btn.onclick=()=>sendDirect(a.cmd,document.getElementById('sel-project').value,'shell');
+    btn.innerHTML=`<div class="mac-ico" style="background:${a.bg}">${li(a.ico)}</div><div class="mac-lbl">${a.lbl}</div>`;
     devGrid.appendChild(btn);
   });
 
-  // AI quick launch grid
+  // AI quick launch
   const aiGrid = document.getElementById('ai-grid');
   aiGrid.innerHTML='';
-  const aiActions = [
-    {ico:lucideIcon('terminal'),lbl:'New Claude',cmd:'new claude chat',tool:'claude-code'},
-    {ico:lucideIcon('monitor'),lbl:'Warp+Claude',cmd:'open warp',tool:'warp'},
-    {ico:lucideIcon('message-square'),lbl:'ChatGPT',cmd:'Hello',tool:'chatgpt'},
-    {ico:lucideIcon('sparkles'),lbl:'Gemini',cmd:'Hello',tool:'gemini'},
-    {ico:lucideIcon('code'),lbl:'Cursor AI',cmd:'Hello',tool:'cursor'},
-    {ico:lucideIcon('bot'),lbl:'Claude Web',cmd:'Hello',tool:'claude-web'},
-    {ico:lucideIcon('braces'),lbl:'Copilot',cmd:'Hello',tool:'copilot'},
-    {ico:lucideIcon('heart-pulse'),lbl:'Health Check',cmd:'Check all project health and report status',tool:'claude-code'},
-    {ico:lucideIcon('bug'),lbl:'Fix Bugs',cmd:'Find and fix any bugs or errors in this project',tool:'claude-code'},
-    {ico:lucideIcon('search'),lbl:'Code Review',cmd:'Review the recent changes and suggest improvements',tool:'claude-code'},
-    {ico:lucideIcon('test-tube'),lbl:'Write Tests',cmd:'Write tests for the main components',tool:'claude-code'},
-    {ico:lucideIcon('lightbulb'),lbl:'Explain Code',cmd:'Explain the project structure and main files',tool:'claude-code'},
+  const ais = [
+    {ico:'terminal',lbl:'New Claude',cmd:'new claude chat',tool:'claude-code',bg:'linear-gradient(135deg,#d4a574,#c48c50)'},
+    {ico:'monitor',lbl:'Warp+Claude',cmd:'open warp',tool:'warp',bg:'linear-gradient(135deg,#1a1a2e,#16213e)'},
+    {ico:'message-square',lbl:'ChatGPT',cmd:'Hello',tool:'chatgpt',bg:'linear-gradient(135deg,#10a37f,#0d8c6d)'},
+    {ico:'sparkles',lbl:'Gemini',cmd:'Hello',tool:'gemini',bg:'linear-gradient(135deg,#4285f4,#8ab4f8)'},
+    {ico:'code',lbl:'Cursor AI',cmd:'Hello',tool:'cursor',bg:'linear-gradient(135deg,#000,#333)'},
+    {ico:'bot',lbl:'Claude Web',cmd:'Hello',tool:'claude-web',bg:'linear-gradient(135deg,#d4a574,#b8834a)'},
+    {ico:'braces',lbl:'Copilot',cmd:'Hello',tool:'copilot',bg:'linear-gradient(135deg,#000,#24292e)'},
+    {ico:'heart-pulse',lbl:'Health Check',cmd:'Check all project health and report status',tool:'claude-code',bg:'linear-gradient(135deg,#ef4444,#f87171)'},
+    {ico:'bug',lbl:'Fix Bugs',cmd:'Find and fix any bugs or errors in this project',tool:'claude-code',bg:'linear-gradient(135deg,#f97316,#fb923c)'},
+    {ico:'search',lbl:'Code Review',cmd:'Review the recent changes and suggest improvements',tool:'claude-code',bg:'linear-gradient(135deg,#8b5cf6,#a78bfa)'},
+    {ico:'test-tube',lbl:'Write Tests',cmd:'Write tests for the main components',tool:'claude-code',bg:'linear-gradient(135deg,#22c55e,#4ade80)'},
+    {ico:'lightbulb',lbl:'Explain Code',cmd:'Explain the project structure and main files',tool:'claude-code',bg:'linear-gradient(135deg,#eab308,#facc15)'},
   ];
-  aiActions.forEach(a=>{
-    const btn = document.createElement('div');
-    btn.className='mac-btn';
-    btn.onclick = ()=> sendDirect(a.cmd, document.getElementById('sel-project').value, a.tool);
-    btn.innerHTML=`<div class="mac-ico">${a.ico}</div><div class="mac-lbl">${a.lbl}</div>`;
+  ais.forEach(a=>{
+    const btn=document.createElement('div');btn.className='mac-btn';
+    btn.onclick=()=>sendDirect(a.cmd,document.getElementById('sel-project').value,a.tool||'claude-code');
+    btn.innerHTML=`<div class="mac-ico" style="background:${a.bg}">${li(a.ico)}</div><div class="mac-lbl">${a.lbl}</div>`;
     aiGrid.appendChild(btn);
   });
-  // Render Lucide icons after DOM update
   setTimeout(()=>lucide.createIcons(),100);
 }
 
