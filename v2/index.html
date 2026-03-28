@@ -482,6 +482,32 @@ body{
   cursor:pointer;transition:all 0.15s;
 }
 .deploy-btn:active{background:var(--danger);color:#fff}
+
+/* ═══ BOTTOM TAB BAR ═══ */
+.tab-bar{
+  display:flex;background:var(--card);
+  border-top:1px solid var(--border);
+  padding:6px 0 calc(6px + var(--safe-bottom));
+  z-index:50;flex-shrink:0;
+}
+.tab-item{
+  flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;
+  padding:6px 0;cursor:pointer;transition:all 0.15s;
+  -webkit-user-select:none;user-select:none;
+}
+.tab-item.active{color:var(--accent)}
+.tab-item:not(.active){color:var(--dim)}
+.tab-ico{font-size:20px;line-height:1}
+.tab-lbl{font-size:9px;font-weight:600;letter-spacing:0.3px}
+.tab-page{display:none}
+.tab-page.active{display:block}
+
+/* ═══ PULL TO REFRESH ═══ */
+.ptr-indicator{
+  text-align:center;padding:12px;font-size:10px;
+  color:var(--dim);display:none;
+}
+.ptr-indicator.show{display:block}
 .preview-spinner{
   width:30px;height:30px;border:3px solid var(--border);
   border-top-color:var(--accent2);border-radius:50%;
@@ -603,54 +629,89 @@ body{
 
   <!-- Scrollable content -->
   <div class="app-content" id="app-content">
-    <!-- Stats -->
-    <div class="stats">
-      <div class="stat"><div class="stat-val c-green" id="n-live">0</div><div class="stat-lbl">Live</div></div>
-      <div class="stat"><div class="stat-val c-red" id="n-issues">0</div><div class="stat-lbl">Issues</div></div>
-      <div class="stat"><div class="stat-val c-blue" id="n-projects">0</div><div class="stat-lbl">Projects</div></div>
-      <div class="stat"><div class="stat-val c-warn" id="n-cmds">0</div><div class="stat-lbl">Commands</div></div>
-    </div>
 
-    <!-- Result -->
-    <div class="result" id="result-panel">
-      <div class="result-hdr">
-        <span class="result-title" id="result-title">Result</span>
-        <button class="result-x" onclick="closeResult()">&times;</button>
+    <!-- ═══ TAB: DASHBOARD ═══ -->
+    <div class="tab-page active" id="page-dashboard">
+      <div class="stats">
+        <div class="stat"><div class="stat-val c-green" id="n-live">0</div><div class="stat-lbl">Live</div></div>
+        <div class="stat"><div class="stat-val c-red" id="n-issues">0</div><div class="stat-lbl">Issues</div></div>
+        <div class="stat"><div class="stat-val c-blue" id="n-projects">0</div><div class="stat-lbl">Projects</div></div>
+        <div class="stat"><div class="stat-val c-warn" id="n-cmds">0</div><div class="stat-lbl">Commands</div></div>
       </div>
-      <div class="result-body" id="result-body"></div>
-      <div class="result-foot"><span id="result-foot"></span><button class="copy-btn" onclick="copyResult()">Copy</button></div>
+
+      <div class="result" id="result-panel">
+        <div class="result-hdr">
+          <span class="result-title" id="result-title">Result</span>
+          <button class="result-x" onclick="closeResult()">&times;</button>
+        </div>
+        <div class="result-body" id="result-body"></div>
+        <div class="result-foot"><span id="result-foot"></span><button class="copy-btn" onclick="copyResult()">Copy</button></div>
+      </div>
+
+      <div class="sec">Projects</div>
+      <div class="proj-list" id="proj-list"></div>
+
+      <div class="sec">Recent</div>
+      <div id="hist-list"></div>
     </div>
 
-    <!-- Projects -->
-    <div class="sec">Projects</div>
-    <div class="proj-list" id="proj-list"></div>
+    <!-- ═══ TAB: TOOLS ═══ -->
+    <div class="tab-page" id="page-tools">
+      <div class="sec">Apps</div>
+      <div class="mac-grid" id="mac-grid"></div>
 
-    <!-- Quick Actions -->
-    <div class="sec">Apps</div>
-    <div class="mac-grid" id="mac-grid"></div>
+      <div class="sec">Dev Shortcuts</div>
+      <div class="mac-grid" id="dev-grid"></div>
 
-    <!-- Dev Shortcuts -->
-    <div class="sec">Dev Shortcuts</div>
-    <div class="mac-grid" id="dev-grid"></div>
-
-    <!-- AI Quick Launch -->
-    <div class="sec">AI Quick Launch</div>
-    <div class="mac-grid" id="ai-grid"></div>
-
-    <!-- Saved Commands -->
-    <div class="sec">Saved Commands</div>
-    <div class="saved-bar" id="saved-bar">
-      <div class="empty" style="padding:8px">No saved commands yet</div>
+      <div class="sec">AI Quick Launch</div>
+      <div class="mac-grid" id="ai-grid"></div>
     </div>
 
-    <!-- History -->
-    <div class="sec">Recent</div>
-    <div id="hist-list"></div>
+    <!-- ═══ TAB: TERMINAL ═══ -->
+    <div class="tab-page" id="page-terminal">
+      <div class="sec">Saved Commands</div>
+      <div class="saved-bar" id="saved-bar">
+        <div class="empty" style="padding:8px">No saved commands yet</div>
+      </div>
 
-    <!-- Footer -->
-    <div class="footer">
-      <div class="lock-btn" onclick="logout()">Lock</div>
+      <div class="sec">Command History</div>
+      <div id="hist-list-2"></div>
     </div>
+
+    <!-- ═══ TAB: SETTINGS ═══ -->
+    <div class="tab-page" id="page-settings">
+      <div class="sec">Connection</div>
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:14px;margin-bottom:12px">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+          <div class="lp-dot" id="lp-dot-2"></div>
+          <span style="font-size:13px;font-weight:600" id="lp-status-2">checking...</span>
+        </div>
+        <div style="font-size:10px;color:var(--dim)">Listener polls Supabase every 3s</div>
+      </div>
+
+      <div class="sec">About</div>
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:14px;margin-bottom:12px">
+        <div style="font-size:13px;font-weight:700;margin-bottom:4px">Navi HQ v3</div>
+        <div style="font-size:11px;color:var(--dim2);line-height:1.6">
+          Phone-to-laptop dev command centre.<br>
+          Zero API costs. Uses your existing Claude Max plan.<br>
+          Built with Supabase + GitHub Pages.
+        </div>
+      </div>
+
+      <div class="footer">
+        <div class="lock-btn" onclick="logout()">Lock</div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Tab Bar -->
+  <div class="tab-bar">
+    <div class="tab-item active" onclick="switchTab('dashboard')"><div class="tab-ico">&#127968;</div><div class="tab-lbl">Dashboard</div></div>
+    <div class="tab-item" onclick="switchTab('tools')"><div class="tab-ico">&#9889;</div><div class="tab-lbl">Tools</div></div>
+    <div class="tab-item" onclick="switchTab('terminal')"><div class="tab-ico">&#9000;</div><div class="tab-lbl">Terminal</div></div>
+    <div class="tab-item" onclick="switchTab('settings')"><div class="tab-ico">&#9881;</div><div class="tab-lbl">Settings</div></div>
   </div>
 
   <!-- Command Bar -->
@@ -1391,8 +1452,11 @@ async function checkLaptop(){
       const on=ago<2;
       dot.classList.toggle('on',on);
       st.textContent=on?'Connected':'Last seen '+ago+'m ago';
-      document.getElementById('n-sessions').textContent=on?'1':'0';
-    } else{dot.classList.remove('on');st.textContent='Offline';document.getElementById('n-sessions').textContent='0';}
+      // Update settings page too
+      const dot2=document.getElementById('lp-dot-2');
+      const st2=document.getElementById('lp-status-2');
+      if(dot2){dot2.classList.toggle('on',on);st2.textContent=st.textContent;}
+    } else{dot.classList.remove('on');st.textContent='Offline';}
   }catch(e){document.getElementById('lp-status').textContent='Offline';}
 }
 
@@ -1586,6 +1650,41 @@ function initRealtime(){
     // Poll every 1.5s instead of 2s for snappier feel
     // (Full Realtime subscription will be added when supabase-js CDN is included)
   }catch(e){console.log('Realtime init error',e);}
+}
+
+// ═══ TAB SWITCHING ═══
+function switchTab(tab){
+  document.querySelectorAll('.tab-page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab-item').forEach(t=>t.classList.remove('active'));
+  document.getElementById('page-'+tab).classList.add('active');
+  document.querySelectorAll('.tab-item')[['dashboard','tools','terminal','settings'].indexOf(tab)].classList.add('active');
+  // Scroll to top
+  document.getElementById('app-content').scrollTop=0;
+  // Load terminal history if switching to terminal tab
+  if(tab==='terminal') loadTerminalHistory();
+  // Haptic feedback
+  if(navigator.vibrate) navigator.vibrate(10);
+}
+
+async function loadTerminalHistory(){
+  try{
+    const r=await fetch(SB_URL+'/rest/v1/commands?order=created_at.desc&limit=20',{headers:SB_HDR});
+    const d=await r.json();
+    const list=document.getElementById('hist-list-2');
+    if(!list)return;
+    list.innerHTML='';
+    if(!d.length){list.innerHTML='<div class="empty">No commands yet</div>';return;}
+    d.forEach(cmd=>{
+      const el=document.createElement('div');
+      el.className='hist';
+      el.onclick=()=>{if(cmd.result)showResult(cmd.result,cmd.completed_at,false,cmd.status==='error');switchTab('dashboard');};
+      const proj=cmd.project!=='general'?cmd.project:'';
+      const tool=cmd.tool&&cmd.tool!=='claude-code'?cmd.tool:'';
+      const meta=[proj,tool,new Date(cmd.created_at).toLocaleTimeString('en-GB')].filter(Boolean).join(' / ');
+      el.innerHTML=`<div class="hist-cmd">${esc(cmd.command.slice(0,70))}</div><div class="hist-row"><span class="hist-badge ${cmd.status}">${cmd.status}</span><span class="hist-meta">${meta}</span></div>`;
+      list.appendChild(el);
+    });
+  }catch(e){}
 }
 
 // ═══ INIT ═══
