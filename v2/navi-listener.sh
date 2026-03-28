@@ -388,7 +388,7 @@ route_command() {
   # --- Special commands (before tool routing) ---
 
   # NEW WARP + CLAUDE (like v1: opens new tab with Claude in project dir)
-  if echo "$cmd_lower" | grep -qE "(new claude|start claude|open claude|claude chat|new chat|new warp)"; then
+  if echo "$cmd_lower" | grep -qE "(new claude|start claude|open claude|claude chat|new chat|new warp|open warp)"; then
     local project_dir="$HOME"
     if [ "$project" != "general" ] && [ -n "$project" ]; then
       project_dir=$(get_project_dir "$project")
