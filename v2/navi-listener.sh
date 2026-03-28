@@ -569,9 +569,9 @@ run_claude_code() {
 
   local tmpfile="$SESSION_DIR/output-${id}"
   if [ -n "$project_dir" ] && [ -d "$project_dir" ]; then
-    (cd "$project_dir" && claude -p "$cmd" --max-turns 10 2>&1) > "$tmpfile" &
+    (cd "$project_dir" && claude -p "$cmd" --dangerously-skip-permissions --max-turns 20 2>&1) > "$tmpfile" &
   else
-    claude -p "$cmd" --max-turns 10 2>&1 > "$tmpfile" &
+    claude -p "$cmd" --dangerously-skip-permissions --max-turns 20 2>&1 > "$tmpfile" &
   fi
   local pid=$!
   local last_size=0 elapsed=0 timeout=300
