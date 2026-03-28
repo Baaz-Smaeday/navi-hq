@@ -727,10 +727,10 @@ body{
 
       <div class="sec">Power Tools</div>
       <div class="mac-grid">
-        <div class="mac-btn" onclick="runPowerCmd('screenshot')"><div class="mac-ico" style="background:linear-gradient(135deg,#a29bfe,#6c5ce7)"><i data-lucide="camera"></i></div><div class="mac-lbl">Screenshot</div></div>
-        <div class="mac-btn" onclick="runPowerCmd('clipboard_get')"><div class="mac-ico" style="background:linear-gradient(135deg,#55efc4,#00b894)"><i data-lucide="clipboard"></i></div><div class="mac-lbl">Get Clipboard</div></div>
-        <div class="mac-btn" onclick="promptClipboardSet()"><div class="mac-ico" style="background:linear-gradient(135deg,#fd79a8,#e84393)"><i data-lucide="clipboard-edit"></i></div><div class="mac-lbl">Set Clipboard</div></div>
-        <div class="mac-btn" onclick="runPowerCmd('sysinfo')"><div class="mac-ico" style="background:linear-gradient(135deg,#636e72,#2d3436)"><i data-lucide="cpu"></i></div><div class="mac-lbl">System Info</div></div>
+        <div class="mac-btn" onclick="runPowerCmd('screenshot')"><div class="mac-ico" style="background:linear-gradient(135deg,#a29bfe,#6c5ce7)"><img src="https://cdn.simpleicons.org/loom/white" style="width:26px;height:26px"></div><div class="mac-lbl">Screenshot</div></div>
+        <div class="mac-btn" onclick="runPowerCmd('clipboard_get')"><div class="mac-ico" style="background:linear-gradient(135deg,#55efc4,#00b894)"><img src="https://cdn.simpleicons.org/googledocs/white" style="width:26px;height:26px"></div><div class="mac-lbl">Get Clipboard</div></div>
+        <div class="mac-btn" onclick="promptClipboardSet()"><div class="mac-ico" style="background:linear-gradient(135deg,#fd79a8,#e84393)"><img src="https://cdn.simpleicons.org/googledocs/white" style="width:26px;height:26px"></div><div class="mac-lbl">Set Clipboard</div></div>
+        <div class="mac-btn" onclick="runPowerCmd('sysinfo')"><div class="mac-ico" style="background:linear-gradient(135deg,#636e72,#2d3436)"><img src="https://cdn.simpleicons.org/apple/white" style="width:26px;height:26px"></div><div class="mac-lbl">System Info</div></div>
       </div>
 
       <div class="sec">Pipeline</div>
@@ -1147,16 +1147,16 @@ function siImg(slug){return `<img src="https://cdn.simpleicons.org/${slug}/white
 const BRAND={
 chrome: siImg('googlechrome'),
 safari: siImg('safari'),
-warp:`<svg viewBox="0 0 24 24" width="26" height="26"><path d="M8 8l4 4-4 4" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/><line x1="14" y1="16" x2="19" y2="16" stroke="#fff" stroke-width="2.5" stroke-linecap="round"/></svg>`,
-vscode: siImg('visualstudiocode'),
+warp: siImg('warp'),
+vscode: siImg('vscodium'),
 claude: siImg('anthropic'),
 chatgpt: siImg('openai'),
 gemini: siImg('googlegemini'),
 cursor: siImg('cursor'),
 copilot: siImg('githubcopilot'),
-finder:`<svg viewBox="0 0 24 24" width="26" height="26"><rect x="3" y="1" width="18" height="22" rx="4" fill="none" stroke="#fff" stroke-width="1.5"/><circle cx="9" cy="9" r="1.8" fill="#fff"/><circle cx="15" cy="9" r="1.8" fill="#fff"/><path d="M8.5 15c1.2 2.5 5.8 2.5 7 0" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round"/><line x1="12" y1="9" x2="12" y2="13" stroke="#fff" stroke-width="1.5"/></svg>`,
-lock:`<svg viewBox="0 0 24 24" width="24" height="24"><rect x="5" y="11" width="14" height="10" rx="2.5" fill="#fff" opacity="0.9"/><path d="M8 11V7a4 4 0 0 1 8 0v4" fill="none" stroke="#fff" stroke-width="2"/><circle cx="12" cy="16" r="1.5" fill="#ee5a24"/></svg>`,
-camera:`<svg viewBox="0 0 24 24" width="24" height="24"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" fill="#fff" opacity="0.15" stroke="#fff" stroke-width="1.5"/><circle cx="12" cy="13" r="4" fill="none" stroke="#fff" stroke-width="2"/><circle cx="12" cy="13" r="1.5" fill="#fff"/></svg>`,
+finder: siImg('macos'),
+lock: siImg('bitwarden'),
+camera: siImg('loom'),
 claudeweb: siImg('anthropic'),
 };
 
