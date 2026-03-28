@@ -2,183 +2,342 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0a0a0a">
+<meta name="apple-mobile-web-app-title" content="Navi HQ">
+<link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect fill='%230a0a0a' width='100' height='100' rx='20'/><text y='68' x='50' text-anchor='middle' font-size='50' fill='%2300e676'>N</text></svg>">
 <title>Navi HQ</title>
-<link rel="manifest" href="manifest.json">
 <style>
-*{margin:0;padding:0;box-sizing:border-box}
-:root{--bg:#0a0a0a;--card:#141414;--border:#222;--text:#e0e0e0;--dim:#666;--accent:#00e676;--accent2:#00b0ff;--danger:#ff5252;--warn:#ffab40;--radius:12px}
-body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);min-height:100dvh;padding:0 0 80px}
-.container{max-width:480px;margin:0 auto;padding:12px}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;-webkit-touch-callout:none}
+:root{
+  --bg:#0a0a0a;--card:#151515;--card2:#1a1a1a;--border:#1e1e1e;--border2:#2a2a2a;
+  --text:#f0f0f0;--text2:#ccc;--dim:#555;--dim2:#777;
+  --accent:#00e676;--accent-dim:#00e67633;--accent2:#00b0ff;--accent2-dim:#00b0ff22;
+  --danger:#ff5252;--warn:#ffab40;
+  --radius:14px;--radius-sm:10px;
+  --safe-top:env(safe-area-inset-top);--safe-bottom:env(safe-area-inset-bottom);
+}
+html,body{height:100%;overflow:hidden}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','Segoe UI',sans-serif;
+  background:var(--bg);color:var(--text);
+  -webkit-font-smoothing:antialiased;
+  -webkit-overflow-scrolling:touch;
+}
 
-/* --- Login Screen --- */
-#login-screen{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:90dvh;padding:20px}
-#login-screen h1{font-size:28px;font-weight:700;margin-bottom:4px}
-#login-screen .sub{color:var(--dim);font-size:12px;margin-bottom:32px}
-#login-screen input{width:240px;padding:14px;border-radius:var(--radius);border:1px solid var(--border);background:var(--card);color:var(--text);font-size:18px;text-align:center;letter-spacing:8px;outline:none}
-#login-screen input:focus{border-color:var(--accent)}
-#login-error{color:var(--danger);font-size:12px;margin-top:8px;min-height:16px}
+/* ═══ LOGIN SCREEN ═══ */
+#login-screen{
+  position:fixed;inset:0;z-index:500;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  background:var(--bg);
+  padding:20px;padding-top:var(--safe-top);
+  transition:opacity 0.4s,transform 0.4s;
+}
+#login-screen.hidden{opacity:0;transform:scale(1.05);pointer-events:none}
+.login-logo{font-size:42px;font-weight:800;letter-spacing:-1px;margin-bottom:2px}
+.login-logo span{color:var(--accent)}
+.login-sub{color:var(--dim2);font-size:13px;font-weight:500;margin-bottom:40px;letter-spacing:0.5px}
+.pin-wrap{position:relative;width:260px}
+.pin-wrap input{
+  width:100%;padding:16px 20px;
+  border-radius:var(--radius);border:2px solid var(--border2);
+  background:var(--card);color:var(--text);
+  font-size:24px;text-align:center;letter-spacing:12px;
+  outline:none;transition:border-color 0.2s;
+}
+.pin-wrap input:focus{border-color:var(--accent)}
+.pin-wrap input.shake{animation:shake 0.4s}
+.pin-dots{display:flex;justify-content:center;gap:10px;margin-top:16px}
+.pin-dot{width:10px;height:10px;border-radius:50%;background:var(--border2);transition:background 0.15s,transform 0.15s}
+.pin-dot.filled{background:var(--accent);transform:scale(1.2)}
+#login-error{color:var(--danger);font-size:12px;margin-top:12px;min-height:16px;text-align:center}
+@keyframes shake{0%,100%{transform:translateX(0)}20%,60%{transform:translateX(-8px)}40%,80%{transform:translateX(8px)}}
 
-/* --- Header --- */
-.header{display:flex;align-items:center;justify-content:space-between;padding:16px 0 8px}
-.logo{font-size:20px;font-weight:700;letter-spacing:-0.5px}
+/* ═══ APP SHELL ═══ */
+#app{
+  position:fixed;inset:0;
+  display:flex;flex-direction:column;
+  opacity:0;transform:translateY(20px);
+  transition:opacity 0.4s,transform 0.4s;
+}
+#app.visible{opacity:1;transform:translateY(0)}
+
+/* ═══ HEADER ═══ */
+.app-header{
+  flex-shrink:0;
+  padding:calc(12px + var(--safe-top)) 16px 10px;
+  background:var(--bg);
+  border-bottom:1px solid var(--border);
+  z-index:10;
+}
+.header-row{display:flex;align-items:center;justify-content:space-between}
+.logo{font-size:22px;font-weight:800;letter-spacing:-0.5px}
 .logo span{color:var(--accent)}
-.status-bar{display:flex;align-items:center;gap:6px}
-.status-dot{width:8px;height:8px;border-radius:50%;background:var(--danger)}
-.status-dot.on{background:var(--accent);box-shadow:0 0 8px var(--accent)}
-.status-text{font-size:10px;color:var(--dim)}
+.laptop-badge{
+  display:flex;align-items:center;gap:6px;
+  padding:5px 10px;border-radius:20px;
+  background:var(--card);border:1px solid var(--border);
+}
+.lp-dot{width:7px;height:7px;border-radius:50%;background:var(--danger);transition:all 0.3s}
+.lp-dot.on{background:var(--accent);box-shadow:0 0 6px var(--accent)}
+.lp-text{font-size:10px;color:var(--dim2);font-weight:500}
 
-/* --- Stats --- */
-.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:12px 0}
-.stat{background:var(--card);border-radius:var(--radius);padding:12px;text-align:center;border:1px solid var(--border)}
-.stat-num{font-size:24px;font-weight:700}
-.stat-label{font-size:9px;color:var(--dim);text-transform:uppercase;letter-spacing:1px;margin-top:2px}
-.stat-num.green{color:var(--accent)}.stat-num.blue{color:var(--accent2)}.stat-num.red{color:var(--danger)}
+/* ═══ SCROLLABLE CONTENT ═══ */
+.app-content{
+  flex:1;overflow-y:auto;overflow-x:hidden;
+  padding:0 16px 200px;
+  -webkit-overflow-scrolling:touch;
+}
 
-/* --- Project Cards --- */
-.section-title{font-size:11px;font-weight:600;color:var(--dim);text-transform:uppercase;letter-spacing:1px;margin:16px 0 8px;padding:0 4px}
-.project-list{display:flex;flex-direction:column;gap:6px}
-.project-card{background:var(--card);border-radius:var(--radius);padding:12px;border:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;cursor:pointer;transition:border-color 0.2s}
-.project-card:hover,.project-card.selected{border-color:var(--accent)}
-.project-card.selected{background:#0a1a0f}
-.p-info{flex:1}
-.p-name{font-size:14px;font-weight:600}
-.p-tags{display:flex;gap:4px;margin-top:4px}
-.p-tag{font-size:9px;padding:2px 6px;border-radius:4px;background:#1a1a1a;color:var(--dim)}
-.p-url{font-size:10px;color:var(--dim);margin-top:2px}
-.p-actions{display:flex;gap:4px}
-.p-action{font-size:9px;padding:4px 8px;border-radius:6px;background:#1a2a1a;color:var(--accent);border:none;cursor:pointer}
-.p-action:active{opacity:0.7}
+/* ═══ STATS ROW ═══ */
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:14px 0}
+.stat{
+  background:var(--card);border-radius:var(--radius);
+  padding:14px 8px;text-align:center;
+  border:1px solid var(--border);
+}
+.stat-val{font-size:28px;font-weight:800;line-height:1}
+.stat-lbl{font-size:9px;color:var(--dim2);text-transform:uppercase;letter-spacing:1.2px;margin-top:4px;font-weight:600}
+.c-green{color:var(--accent)}.c-blue{color:var(--accent2)}.c-warn{color:var(--warn)}
 
-/* --- Command Input --- */
-.cmd-panel{position:fixed;bottom:0;left:0;right:0;background:var(--card);border-top:1px solid var(--border);padding:8px 12px calc(8px + env(safe-area-inset-bottom));z-index:100}
-.cmd-panel-inner{max-width:480px;margin:0 auto}
-.cmd-selectors{display:flex;gap:6px;margin-bottom:6px}
-.cmd-sel{flex:1;padding:6px 8px;border-radius:8px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:11px;outline:none}
+/* ═══ SECTION ═══ */
+.sec{font-size:11px;font-weight:700;color:var(--dim);text-transform:uppercase;letter-spacing:1.5px;margin:20px 0 10px}
+
+/* ═══ PROJECT CARDS ═══ */
+.proj-list{display:flex;flex-direction:column;gap:8px}
+.proj{
+  background:var(--card);border-radius:var(--radius);
+  padding:14px;border:1px solid var(--border);
+  display:flex;align-items:flex-start;gap:12px;
+  transition:all 0.2s;position:relative;overflow:hidden;
+  -webkit-user-select:none;user-select:none;
+}
+.proj:active{transform:scale(0.98);background:var(--card2)}
+.proj.sel{border-color:var(--accent);background:#0a1a0f}
+.proj.sel::before{
+  content:'';position:absolute;left:0;top:0;bottom:0;width:3px;
+  background:var(--accent);border-radius:0 3px 3px 0;
+}
+.proj-icon{
+  width:40px;height:40px;border-radius:10px;
+  background:var(--accent-dim);
+  display:flex;align-items:center;justify-content:center;
+  font-size:18px;font-weight:800;color:var(--accent);
+  flex-shrink:0;
+}
+.proj-body{flex:1;min-width:0}
+.proj-name{font-size:15px;font-weight:700}
+.proj-url{font-size:10px;color:var(--dim2);margin-top:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.proj-tags{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px}
+.tag{font-size:9px;padding:3px 8px;border-radius:6px;background:var(--card2);color:var(--dim2);font-weight:500;border:1px solid var(--border)}
+.proj-actions{display:flex;flex-wrap:wrap;gap:4px;margin-top:8px}
+.qa-btn{
+  font-size:10px;padding:6px 10px;border-radius:8px;
+  background:var(--accent-dim);color:var(--accent);
+  border:1px solid #00e67622;font-weight:600;
+  cursor:pointer;transition:all 0.15s;
+}
+.qa-btn:active{background:var(--accent);color:#000}
+
+/* ═══ MAC ACTIONS GRID ═══ */
+.mac-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.mac-btn{
+  background:var(--card);border:1px solid var(--border);
+  border-radius:var(--radius);padding:14px 4px;
+  text-align:center;cursor:pointer;
+  transition:all 0.15s;-webkit-user-select:none;user-select:none;
+}
+.mac-btn:active{transform:scale(0.95);border-color:var(--accent);background:#0a1a0f}
+.mac-ico{font-size:24px;margin-bottom:4px}
+.mac-lbl{font-size:9px;color:var(--dim2);font-weight:600;text-transform:uppercase;letter-spacing:0.5px}
+
+/* ═══ RESULT PANEL ═══ */
+.result{
+  background:var(--card);border:1px solid var(--border);
+  border-radius:var(--radius);margin:12px 0;overflow:hidden;
+  display:none;animation:slideUp 0.3s ease;
+}
+.result.show{display:block}
+.result-hdr{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-bottom:1px solid var(--border)}
+.result-title{font-size:11px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:0.5px}
+.result-x{font-size:20px;color:var(--dim);cursor:pointer;background:none;border:none;padding:0 4px;line-height:1}
+.result-body{
+  padding:14px;font-family:'SF Mono',Monaco,'Cascadia Code',monospace;
+  font-size:12px;line-height:1.6;max-height:50vh;overflow-y:auto;
+  white-space:pre-wrap;word-break:break-word;color:var(--text2);
+}
+.result-foot{padding:6px 14px;border-top:1px solid var(--border);font-size:9px;color:var(--dim)}
+.streaming{color:var(--accent);animation:pulse 1s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
+@keyframes slideUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+
+/* ═══ HISTORY ═══ */
+.hist{
+  background:var(--card);border:1px solid var(--border);
+  border-radius:var(--radius-sm);padding:12px 14px;margin-bottom:6px;
+  cursor:pointer;transition:all 0.15s;
+}
+.hist:active{background:var(--card2);transform:scale(0.99)}
+.hist-cmd{font-size:13px;font-weight:500}
+.hist-row{display:flex;align-items:center;gap:6px;margin-top:5px}
+.hist-badge{
+  padding:2px 7px;border-radius:5px;font-size:9px;font-weight:700;
+  text-transform:uppercase;letter-spacing:0.3px;
+}
+.hist-badge.done{background:#0a2a0f;color:var(--accent)}
+.hist-badge.error{background:#2a0a0a;color:var(--danger)}
+.hist-badge.running{background:#1a1a0a;color:var(--warn)}
+.hist-badge.pending{background:var(--card2);color:var(--dim)}
+.hist-meta{font-size:9px;color:var(--dim)}
+
+/* ═══ COMMAND BAR (fixed bottom) ═══ */
+.cmd-bar{
+  flex-shrink:0;
+  background:var(--card);
+  border-top:1px solid var(--border);
+  padding:8px 12px calc(8px + var(--safe-bottom));
+  z-index:50;
+}
+.cmd-sels{display:flex;gap:6px;margin-bottom:6px}
+.cmd-sel{
+  flex:1;padding:8px 10px;border-radius:var(--radius-sm);
+  border:1px solid var(--border);background:var(--bg);
+  color:var(--text);font-size:12px;font-weight:500;
+  outline:none;appearance:none;-webkit-appearance:none;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%23555'%3E%3Cpath d='M2 4l4 4 4-4'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 10px center;
+  padding-right:28px;
+}
 .cmd-sel:focus{border-color:var(--accent)}
-.cmd-row{display:flex;gap:6px}
-.cmd-input{flex:1;padding:10px 12px;border-radius:10px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:14px;outline:none;resize:none;min-height:42px;max-height:120px;font-family:inherit}
+.cmd-row{display:flex;gap:8px;align-items:flex-end}
+.cmd-input{
+  flex:1;padding:12px 14px;border-radius:var(--radius-sm);
+  border:1px solid var(--border);background:var(--bg);
+  color:var(--text);font-size:15px;outline:none;
+  resize:none;min-height:44px;max-height:100px;
+  font-family:inherit;line-height:1.4;
+}
 .cmd-input:focus{border-color:var(--accent)}
-.cmd-send{padding:10px 16px;border-radius:10px;border:none;background:var(--accent);color:#000;font-weight:700;font-size:14px;cursor:pointer}
-.cmd-send:active{opacity:0.8}
-.cmd-send:disabled{opacity:0.4;cursor:not-allowed}
+.cmd-input::placeholder{color:var(--dim)}
+.cmd-send{
+  height:44px;padding:0 20px;border-radius:var(--radius-sm);
+  border:none;background:var(--accent);color:#000;
+  font-weight:800;font-size:14px;cursor:pointer;
+  transition:all 0.15s;flex-shrink:0;letter-spacing:0.3px;
+}
+.cmd-send:active{transform:scale(0.95);opacity:0.9}
+.cmd-send:disabled{opacity:0.3;cursor:not-allowed}
 
-/* --- Result Panel --- */
-.result-panel{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);margin:12px 0;overflow:hidden;display:none}
-.result-panel.active{display:block}
-.result-header{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border-bottom:1px solid var(--border)}
-.result-title{font-size:11px;font-weight:600;color:var(--accent)}
-.result-close{font-size:16px;color:var(--dim);cursor:pointer;background:none;border:none;padding:0 4px}
-.result-body{padding:12px;font-family:'SF Mono',Monaco,Consolas,monospace;font-size:12px;line-height:1.5;max-height:400px;overflow-y:auto;white-space:pre-wrap;word-break:break-word;color:var(--text)}
-.result-meta{padding:6px 12px;border-top:1px solid var(--border);font-size:9px;color:var(--dim)}
-.result-streaming{color:var(--accent);animation:pulse 1s ease-in-out infinite}
-@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.5}}
+/* ═══ FOOTER ═══ */
+.footer{text-align:center;margin:30px 0 20px}
+.lock-btn{
+  font-size:11px;color:var(--dim);cursor:pointer;
+  padding:8px 20px;border-radius:20px;
+  background:var(--card);border:1px solid var(--border);
+  display:inline-block;font-weight:500;transition:all 0.15s;
+}
+.lock-btn:active{border-color:var(--danger);color:var(--danger)}
 
-/* --- Command History --- */
-.history-item{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:10px 12px;margin-bottom:6px}
-.h-cmd{font-size:12px;font-weight:500}
-.h-meta{display:flex;gap:8px;margin-top:4px;font-size:9px;color:var(--dim)}
-.h-status{padding:1px 6px;border-radius:4px;font-size:9px;font-weight:600}
-.h-status.done{background:#0a2a0f;color:var(--accent)}
-.h-status.error{background:#2a0a0a;color:var(--danger)}
-.h-status.running{background:#1a1a0a;color:var(--warn)}
-.h-status.pending{background:#1a1a1a;color:var(--dim)}
+/* ═══ TOAST ═══ */
+.toast{
+  position:fixed;top:calc(12px + var(--safe-top));left:50%;
+  transform:translateX(-50%) translateY(-20px);
+  background:var(--card);border:1px solid var(--accent);
+  border-radius:var(--radius);padding:10px 20px;
+  font-size:13px;font-weight:500;z-index:600;
+  opacity:0;transition:all 0.3s;pointer-events:none;
+  box-shadow:0 4px 20px rgba(0,0,0,0.4);
+}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.toast.err{border-color:var(--danger);color:var(--danger)}
 
-/* --- Mac Actions --- */
-.mac-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin:8px 0}
-.mac-btn{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:10px 4px;text-align:center;cursor:pointer;font-size:10px;color:var(--dim);transition:border-color 0.2s}
-.mac-btn:active{border-color:var(--accent);background:#0a1a0f}
-.mac-ico{font-size:20px;margin-bottom:2px}
-
-/* --- Settings --- */
-.settings-link{font-size:10px;color:var(--dim);text-align:center;margin:24px 0;cursor:pointer}
-.settings-link:hover{color:var(--text)}
-
-/* --- Toast --- */
-.toast{position:fixed;top:20px;left:50%;transform:translateX(-50%);background:var(--card);border:1px solid var(--accent);border-radius:10px;padding:8px 16px;font-size:12px;z-index:200;opacity:0;transition:opacity 0.3s}
-.toast.show{opacity:1}
-.toast.err{border-color:var(--danger)}
-
-/* --- Scrollbar --- */
-::-webkit-scrollbar{width:4px}
-::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px}
+/* ═══ EMPTY STATE ═══ */
+.empty{text-align:center;padding:20px;color:var(--dim);font-size:12px}
 </style>
 </head>
 <body>
 
-<!-- === LOGIN === -->
+<!-- ═══ LOGIN ═══ -->
 <div id="login-screen">
-  <h1>Navi <span>HQ</span></h1>
-  <div class="sub">ai command centre</div>
-  <input type="password" id="pin-input" placeholder="PIN" maxlength="6" inputmode="numeric" autocomplete="off">
+  <div class="login-logo">Navi <span>HQ</span></div>
+  <div class="login-sub">AI Command Centre</div>
+  <div class="pin-wrap">
+    <input type="password" id="pin-input" maxlength="6" inputmode="numeric" autocomplete="off" placeholder="">
+  </div>
+  <div class="pin-dots" id="pin-dots">
+    <div class="pin-dot"></div><div class="pin-dot"></div>
+    <div class="pin-dot"></div><div class="pin-dot"></div>
+  </div>
   <div id="login-error"></div>
 </div>
 
-<!-- === MAIN APP === -->
-<div id="app" style="display:none">
-  <div class="container">
-
-    <!-- Header -->
-    <div class="header">
+<!-- ═══ APP ═══ -->
+<div id="app">
+  <!-- Header -->
+  <div class="app-header">
+    <div class="header-row">
       <div class="logo">Navi <span>HQ</span></div>
-      <div class="status-bar">
-        <div class="status-dot" id="lp-dot"></div>
-        <div class="status-text" id="lp-status">checking...</div>
+      <div class="laptop-badge">
+        <div class="lp-dot" id="lp-dot"></div>
+        <div class="lp-text" id="lp-status">checking...</div>
       </div>
     </div>
+  </div>
 
+  <!-- Scrollable content -->
+  <div class="app-content" id="app-content">
     <!-- Stats -->
     <div class="stats">
-      <div class="stat"><div class="stat-num green" id="n-projects">0</div><div class="stat-label">Projects</div></div>
-      <div class="stat"><div class="stat-num blue" id="n-sessions">0</div><div class="stat-label">Sessions</div></div>
-      <div class="stat"><div class="stat-num" id="n-cmds" style="color:var(--warn)">0</div><div class="stat-label">Commands</div></div>
+      <div class="stat"><div class="stat-val c-green" id="n-projects">0</div><div class="stat-lbl">Projects</div></div>
+      <div class="stat"><div class="stat-val c-blue" id="n-sessions">0</div><div class="stat-lbl">Laptop</div></div>
+      <div class="stat"><div class="stat-val c-warn" id="n-cmds">0</div><div class="stat-lbl">Commands</div></div>
     </div>
 
-    <!-- Result Panel -->
-    <div class="result-panel" id="result-panel">
-      <div class="result-header">
+    <!-- Result -->
+    <div class="result" id="result-panel">
+      <div class="result-hdr">
         <span class="result-title" id="result-title">Result</span>
-        <button class="result-close" onclick="closeResult()">&times;</button>
+        <button class="result-x" onclick="closeResult()">&times;</button>
       </div>
       <div class="result-body" id="result-body"></div>
-      <div class="result-meta" id="result-meta"></div>
+      <div class="result-foot" id="result-foot"></div>
     </div>
 
     <!-- Projects -->
-    <div class="section-title">Projects</div>
-    <div class="project-list" id="project-list"></div>
+    <div class="sec">Projects</div>
+    <div class="proj-list" id="proj-list"></div>
 
-    <!-- Mac Actions -->
-    <div class="section-title">Quick Actions</div>
+    <!-- Quick Actions -->
+    <div class="sec">Quick Actions</div>
     <div class="mac-grid" id="mac-grid"></div>
 
     <!-- History -->
-    <div class="section-title">Recent Commands</div>
-    <div id="history-list"></div>
+    <div class="sec">Recent</div>
+    <div id="hist-list"></div>
 
-    <!-- Settings -->
-    <div class="settings-link" onclick="logout()">Lock / Sign Out</div>
+    <!-- Footer -->
+    <div class="footer">
+      <div class="lock-btn" onclick="logout()">Lock</div>
+    </div>
   </div>
 
-  <!-- Fixed Command Input -->
-  <div class="cmd-panel">
-    <div class="cmd-panel-inner">
-      <div class="cmd-selectors">
-        <select class="cmd-sel" id="sel-project"><option value="general">All Projects</option></select>
-        <select class="cmd-sel" id="sel-tool">
-          <option value="claude-code">Claude Code</option>
-          <option value="cursor">Cursor</option>
-          <option value="shell">Shell</option>
-          <option value="copilot">Copilot</option>
-        </select>
-      </div>
-      <div class="cmd-row">
-        <textarea class="cmd-input" id="cmd-input" placeholder="Send a command..." rows="1"></textarea>
-        <button class="cmd-send" id="cmd-send" onclick="sendCommand()">Send</button>
-      </div>
+  <!-- Command Bar -->
+  <div class="cmd-bar">
+    <div class="cmd-sels">
+      <select class="cmd-sel" id="sel-project"><option value="general">All Projects</option></select>
+      <select class="cmd-sel" id="sel-tool">
+        <option value="claude-code">Claude Code</option>
+        <option value="cursor">Cursor</option>
+        <option value="shell">Shell</option>
+        <option value="copilot">Copilot</option>
+      </select>
+    </div>
+    <div class="cmd-row">
+      <textarea class="cmd-input" id="cmd-input" placeholder="Send a command..." rows="1"></textarea>
+      <button class="cmd-send" id="cmd-send" onclick="sendCommand()">Send</button>
     </div>
   </div>
 </div>
@@ -317,382 +476,306 @@ const CONFIG = {
 
 const SB_URL = CONFIG.supabase_url;
 const SB_HDR = {
-  'Content-Type': 'application/json',
-  'apikey': CONFIG.supabase_anon_key,
-  'Authorization': 'Bearer ' + CONFIG.supabase_anon_key
+  'Content-Type':'application/json',
+  'apikey':CONFIG.supabase_anon_key,
+  'Authorization':'Bearer '+CONFIG.supabase_anon_key
 };
 
-// ═══════════════════════════════════════════
-// STATE
-// ═══════════════════════════════════════════
+// ═══ STATE ═══
 let selectedProject = 'general';
 let lastResultId = '';
 let polling = false;
 let pollCount = 0;
 const MAX_POLLS = 150;
 const RATE_LIMIT = [];
-const MAX_RATE = 10;
 
-// ═══════════════════════════════════════════
-// AUTH (client-side PIN — swap for Supabase Auth in Pro)
-// ═══════════════════════════════════════════
-async function hashPin(pin) {
+// ═══ AUTH ═══
+async function hashPin(pin){
   const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(pin));
-  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
+  return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
 }
 
-document.getElementById('pin-input').addEventListener('keydown', async (e) => {
-  if (e.key === 'Enter') {
-    const pin = e.target.value;
-    const hash = await hashPin(pin);
-    if (hash === CONFIG.pin_hash) {
-      sessionStorage.setItem('nhq_ok', '1');
-      showApp();
+const pinInput = document.getElementById('pin-input');
+const pinDots = document.querySelectorAll('.pin-dot');
+
+pinInput.addEventListener('input', async ()=>{
+  const val = pinInput.value;
+  // Update dots
+  pinDots.forEach((d,i)=> d.classList.toggle('filled', i < val.length));
+
+  // Auto-submit at 4 digits
+  if(val.length >= 4){
+    const hash = await hashPin(val);
+    if(hash === CONFIG.pin_hash){
+      document.getElementById('login-screen').classList.add('hidden');
+      setTimeout(()=>{
+        document.getElementById('app').classList.add('visible');
+        init();
+      }, 200);
+      sessionStorage.setItem('nhq_ok','1');
     } else {
       document.getElementById('login-error').textContent = 'Wrong PIN';
-      e.target.value = '';
-      if (navigator.vibrate) navigator.vibrate(200);
+      pinInput.classList.add('shake');
+      if(navigator.vibrate) navigator.vibrate(200);
+      setTimeout(()=>{
+        pinInput.value='';
+        pinInput.classList.remove('shake');
+        pinDots.forEach(d=>d.classList.remove('filled'));
+        document.getElementById('login-error').textContent='';
+      }, 600);
     }
   }
 });
 
-function showApp() {
-  document.getElementById('login-screen').style.display = 'none';
-  document.getElementById('app').style.display = 'block';
-  init();
-}
-
-function logout() {
+function logout(){
   sessionStorage.removeItem('nhq_ok');
-  document.getElementById('app').style.display = 'none';
-  document.getElementById('login-screen').style.display = 'flex';
-  document.getElementById('pin-input').value = '';
+  document.getElementById('app').classList.remove('visible');
+  setTimeout(()=>{
+    document.getElementById('login-screen').classList.remove('hidden');
+    pinInput.value='';
+    pinDots.forEach(d=>d.classList.remove('filled'));
+  }, 200);
 }
 
-// Auto-login if session exists
-if (sessionStorage.getItem('nhq_ok') === '1') showApp();
+// Auto-login
+if(sessionStorage.getItem('nhq_ok')==='1'){
+  document.getElementById('login-screen').classList.add('hidden');
+  document.getElementById('app').classList.add('visible');
+  setTimeout(init, 100);
+}
 
-// ═══════════════════════════════════════════
-// RENDER PROJECTS
-// ═══════════════════════════════════════════
-function renderProjects() {
-  const list = document.getElementById('project-list');
+// ═══ RENDER PROJECTS ═══
+function renderProjects(){
+  const list = document.getElementById('proj-list');
   const sel = document.getElementById('sel-project');
-  list.innerHTML = '';
-
+  list.innerHTML='';
   const projects = CONFIG.projects;
   const slugs = Object.keys(projects);
   document.getElementById('n-projects').textContent = slugs.length;
 
-  // Populate project selector
-  sel.innerHTML = '<option value="general">All Projects</option>';
-  slugs.forEach(slug => {
-    const opt = document.createElement('option');
-    opt.value = slug;
-    opt.textContent = projects[slug].name;
+  sel.innerHTML='<option value="general">All Projects</option>';
+  slugs.forEach(slug=>{
+    const opt=document.createElement('option');
+    opt.value=slug; opt.textContent=projects[slug].name;
     sel.appendChild(opt);
   });
 
-  // Render project cards
-  slugs.forEach(slug => {
+  slugs.forEach(slug=>{
     const p = projects[slug];
     const card = document.createElement('div');
-    card.className = 'project-card' + (selectedProject === slug ? ' selected' : '');
-    card.onclick = () => selectProject(slug);
+    card.className = 'proj'+(selectedProject===slug?' sel':'');
+    card.onclick = ()=> selectProject(slug);
 
-    const tags = (p.tags || []).map(t => `<span class="p-tag">${t}</span>`).join('');
-    const url = p.url ? `<div class="p-url">${p.url}</div>` : '';
-    const actions = (p.quick_actions || []).map(a =>
-      `<button class="p-action" onclick="event.stopPropagation();quickAction('${slug}','${a}')">${a}</button>`
+    const initial = p.name.charAt(0).toUpperCase();
+    const tags = (p.tags||[]).map(t=>`<span class="tag">${t}</span>`).join('');
+    const url = p.url ? `<div class="proj-url">${p.url.replace('https://','')}</div>` : '';
+    const actions = (p.quick_actions||[]).map(a=>
+      `<button class="qa-btn" onclick="event.stopPropagation();quickAction('${slug}','${esc(a)}')">${a}</button>`
     ).join('');
 
-    card.innerHTML = `
-      <div class="p-info">
-        <div class="p-name">${p.name}</div>
-        <div class="p-tags">${tags}</div>
+    card.innerHTML=`
+      <div class="proj-icon">${initial}</div>
+      <div class="proj-body">
+        <div class="proj-name">${esc(p.name)}</div>
         ${url}
+        <div class="proj-tags">${tags}</div>
+        <div class="proj-actions">${actions}</div>
       </div>
-      <div class="p-actions">${actions}</div>
     `;
     list.appendChild(card);
   });
 }
 
-function selectProject(slug) {
+function selectProject(slug){
   selectedProject = slug;
   document.getElementById('sel-project').value = slug;
   renderProjects();
+  // Scroll command bar into view
+  document.getElementById('cmd-input').focus();
 }
 
-function quickAction(project, action) {
+function quickAction(project, action){
   document.getElementById('sel-project').value = project;
   selectedProject = project;
-  sendCommandDirect(action, project, 'claude-code');
+  sendDirect(action, project, 'claude-code');
 }
 
-// ═══════════════════════════════════════════
-// RENDER MAC ACTIONS
-// ═══════════════════════════════════════════
-function renderMacActions() {
+// ═══ MAC ACTIONS ═══
+function renderMacActions(){
   const grid = document.getElementById('mac-grid');
-  grid.innerHTML = '';
-
+  grid.innerHTML='';
   const icons = {
-    'open chrome': '&#127760;', 'open safari': '&#129517;', 'open warp': '&#9000;',
-    'open finder': '&#128193;', 'open vscode': '&#128187;', 'lock': '&#128274;',
-    'screenshot': '&#128248;'
+    'open chrome':'&#127760;','open safari':'&#129517;','open warp':'&#9000;',
+    'open finder':'&#128193;','open vscode':'&#128187;','lock':'&#128274;','screenshot':'&#128248;'
   };
-
-  const actions = CONFIG.mac_actions;
-  Object.keys(actions).forEach(key => {
+  const labels = {
+    'open chrome':'Chrome','open safari':'Safari','open warp':'Warp',
+    'open finder':'Finder','open vscode':'VS Code','lock':'Lock','screenshot':'Screenshot'
+  };
+  Object.keys(CONFIG.mac_actions).forEach(key=>{
     const btn = document.createElement('div');
-    btn.className = 'mac-btn';
-    btn.onclick = () => sendCommandDirect(key, 'general', 'shell');
-    const label = key.replace('open ', '');
-    btn.innerHTML = `<div class="mac-ico">${icons[key] || '&#9889;'}</div>${label}`;
+    btn.className='mac-btn';
+    btn.onclick = ()=> sendDirect(key,'general','shell');
+    btn.innerHTML=`<div class="mac-ico">${icons[key]||'&#9889;'}</div><div class="mac-lbl">${labels[key]||key}</div>`;
     grid.appendChild(btn);
   });
 }
 
-// ═══════════════════════════════════════════
-// SEND COMMAND
-// ═══════════════════════════════════════════
-function checkRateLimit() {
-  const now = Date.now();
-  while (RATE_LIMIT.length > 0 && now - RATE_LIMIT[0] > 60000) RATE_LIMIT.shift();
-  if (RATE_LIMIT.length >= MAX_RATE) return false;
+// ═══ SEND COMMAND ═══
+function checkRate(){
+  const now=Date.now();
+  while(RATE_LIMIT.length>0 && now-RATE_LIMIT[0]>60000) RATE_LIMIT.shift();
+  if(RATE_LIMIT.length>=10) return false;
   RATE_LIMIT.push(now);
   return true;
 }
 
-async function sendCommand() {
-  const input = document.getElementById('cmd-input');
-  const cmd = input.value.trim();
-  if (!cmd) return;
-
-  const project = document.getElementById('sel-project').value;
-  const tool = document.getElementById('sel-tool').value;
-
-  await sendCommandDirect(cmd, project, tool);
-  input.value = '';
-  input.style.height = 'auto';
+async function sendCommand(){
+  const input=document.getElementById('cmd-input');
+  const cmd=input.value.trim();
+  if(!cmd) return;
+  const project=document.getElementById('sel-project').value;
+  const tool=document.getElementById('sel-tool').value;
+  await sendDirect(cmd,project,tool);
+  input.value='';
+  input.style.height='auto';
 }
 
-async function sendCommandDirect(cmd, project, tool) {
-  if (!checkRateLimit()) { toast('Rate limit: max 10/min', true); return; }
-
-  const btn = document.getElementById('cmd-send');
-  btn.disabled = true;
-
-  try {
-    const r = await fetch(SB_URL + '/rest/v1/commands', {
-      method: 'POST',
-      headers: { ...SB_HDR, 'Prefer': 'return=representation' },
-      body: JSON.stringify({
-        command: cmd,
-        project: project || 'general',
-        tool: tool || 'claude-code',
-        secret: CONFIG.shared_secret
-      })
+async function sendDirect(cmd,project,tool){
+  if(!checkRate()){toast('Rate limit: max 10/min',true);return;}
+  const btn=document.getElementById('cmd-send');
+  btn.disabled=true;
+  try{
+    const r=await fetch(SB_URL+'/rest/v1/commands',{
+      method:'POST',
+      headers:{...SB_HDR,'Prefer':'return=representation'},
+      body:JSON.stringify({command:cmd,project:project||'general',tool:tool||'claude-code',secret:CONFIG.shared_secret})
     });
-
-    if (r.ok) {
+    if(r.ok){
       toast('Command sent');
-      showResult('Waiting for response...', null, true);
+      showResult('Waiting for response...',null,true);
       startPolling();
       loadHistory();
-    } else {
-      toast('Failed to send', true);
-    }
-  } catch (e) {
-    toast('Network error', true);
-  }
-
-  btn.disabled = false;
+    } else toast('Failed to send',true);
+  }catch(e){toast('Network error',true);}
+  btn.disabled=false;
 }
 
-// ═══════════════════════════════════════════
-// POLLING FOR RESULTS
-// ═══════════════════════════════════════════
-function startPolling() {
-  if (polling) return;
-  polling = true;
-  pollCount = 0;
-  pollForResult();
+// ═══ POLLING ═══
+function startPolling(){
+  if(polling) return;
+  polling=true; pollCount=0;
+  pollResult();
 }
 
-async function pollForResult() {
-  if (!polling || pollCount >= MAX_POLLS) {
-    polling = false;
-    return;
-  }
+async function pollResult(){
+  if(!polling||pollCount>=MAX_POLLS){polling=false;return;}
   pollCount++;
-
-  try {
-    const r = await fetch(SB_URL + '/rest/v1/commands?order=created_at.desc&limit=1', { headers: SB_HDR });
-    const d = await r.json();
-
-    if (d.length > 0) {
-      const cmd = d[0];
-
-      // Streaming: show partial result while running
-      if (cmd.status === 'running' && cmd.result) {
-        showResult(cmd.result, null, true);
-      }
-
-      // Done or error: show final result
-      if ((cmd.status === 'done' || cmd.status === 'error') && cmd.id !== lastResultId) {
-        lastResultId = cmd.id;
-        showResult(cmd.result || 'No output', cmd.completed_at, false, cmd.status === 'error');
-        polling = false;
+  try{
+    const r=await fetch(SB_URL+'/rest/v1/commands?order=created_at.desc&limit=1',{headers:SB_HDR});
+    const d=await r.json();
+    if(d.length>0){
+      const c=d[0];
+      if(c.status==='running'&&c.result) showResult(c.result,null,true);
+      if((c.status==='done'||c.status==='error')&&c.id!==lastResultId){
+        lastResultId=c.id;
+        showResult(c.result||'No output',c.completed_at,false,c.status==='error');
+        polling=false;
         loadHistory();
         return;
       }
     }
-  } catch (e) {}
-
-  setTimeout(pollForResult, 2000);
+  }catch(e){}
+  setTimeout(pollResult,2000);
 }
 
-// ═══════════════════════════════════════════
-// RESULT DISPLAY
-// ═══════════════════════════════════════════
-function showResult(text, time, streaming = false, isError = false) {
-  const panel = document.getElementById('result-panel');
-  const body = document.getElementById('result-body');
-  const meta = document.getElementById('result-meta');
-  const title = document.getElementById('result-title');
-
-  panel.classList.add('active');
-  body.textContent = text || '';
-  title.textContent = streaming ? 'Streaming...' : (isError ? 'Error' : 'Result');
-  title.style.color = isError ? 'var(--danger)' : 'var(--accent)';
-
-  if (streaming) {
-    body.classList.add('result-streaming');
-    meta.textContent = 'Waiting for response...';
-  } else {
-    body.classList.remove('result-streaming');
-    meta.textContent = time ? new Date(time).toLocaleString('en-GB') : '';
-  }
-
-  body.scrollTop = body.scrollHeight;
+// ═══ RESULT DISPLAY ═══
+function showResult(text,time,streaming=false,isError=false){
+  const panel=document.getElementById('result-panel');
+  const body=document.getElementById('result-body');
+  const foot=document.getElementById('result-foot');
+  const title=document.getElementById('result-title');
+  panel.classList.add('show');
+  body.textContent=text||'';
+  title.textContent=streaming?'Streaming...':isError?'Error':'Result';
+  title.style.color=isError?'var(--danger)':'var(--accent)';
+  if(streaming){body.classList.add('streaming');foot.textContent='Waiting...';}
+  else{body.classList.remove('streaming');foot.textContent=time?new Date(time).toLocaleString('en-GB'):'';}
+  body.scrollTop=body.scrollHeight;
+  // Scroll to result
+  panel.scrollIntoView({behavior:'smooth',block:'nearest'});
 }
 
-function closeResult() {
-  document.getElementById('result-panel').classList.remove('active');
-}
+function closeResult(){document.getElementById('result-panel').classList.remove('show');}
 
-// ═══════════════════════════════════════════
-// HISTORY
-// ═══════════════════════════════════════════
-async function loadHistory() {
-  try {
-    const r = await fetch(SB_URL + '/rest/v1/commands?order=created_at.desc&limit=10', { headers: SB_HDR });
-    const d = await r.json();
-    document.getElementById('n-cmds').textContent = d.length;
-
-    const list = document.getElementById('history-list');
-    list.innerHTML = '';
-
-    d.forEach(cmd => {
-      const item = document.createElement('div');
-      item.className = 'history-item';
-      item.onclick = () => {
-        if (cmd.result) showResult(cmd.result, cmd.completed_at, false, cmd.status === 'error');
-      };
-
-      const project = cmd.project !== 'general' ? cmd.project : '';
-      const tool = cmd.tool !== 'claude-code' ? cmd.tool : '';
-      const meta = [project, tool, new Date(cmd.created_at).toLocaleTimeString('en-GB')].filter(Boolean).join(' / ');
-
-      item.innerHTML = `
-        <div class="h-cmd">${escapeHtml(cmd.command.slice(0, 80))}</div>
-        <div class="h-meta">
-          <span class="h-status ${cmd.status}">${cmd.status}</span>
-          <span>${meta}</span>
-        </div>
-      `;
-      list.appendChild(item);
+// ═══ HISTORY ═══
+async function loadHistory(){
+  try{
+    const r=await fetch(SB_URL+'/rest/v1/commands?order=created_at.desc&limit=15',{headers:SB_HDR});
+    const d=await r.json();
+    document.getElementById('n-cmds').textContent=d.length;
+    const list=document.getElementById('hist-list');
+    list.innerHTML='';
+    if(d.length===0){list.innerHTML='<div class="empty">No commands yet</div>';return;}
+    d.forEach(cmd=>{
+      const el=document.createElement('div');
+      el.className='hist';
+      el.onclick=()=>{if(cmd.result) showResult(cmd.result,cmd.completed_at,false,cmd.status==='error');};
+      const proj=cmd.project!=='general'?cmd.project:'';
+      const tool=cmd.tool&&cmd.tool!=='claude-code'?cmd.tool:'';
+      const meta=[proj,tool,new Date(cmd.created_at).toLocaleTimeString('en-GB')].filter(Boolean).join(' / ');
+      el.innerHTML=`
+        <div class="hist-cmd">${esc(cmd.command.slice(0,70))}</div>
+        <div class="hist-row">
+          <span class="hist-badge ${cmd.status}">${cmd.status}</span>
+          <span class="hist-meta">${meta}</span>
+        </div>`;
+      list.appendChild(el);
     });
-
-    // Set lastResultId from most recent done command
-    const lastDone = d.find(c => c.status === 'done' || c.status === 'error');
-    if (lastDone && !lastResultId) lastResultId = lastDone.id;
-
-  } catch (e) {}
+    const lastDone=d.find(c=>c.status==='done'||c.status==='error');
+    if(lastDone&&!lastResultId) lastResultId=lastDone.id;
+  }catch(e){}
 }
 
-// ═══════════════════════════════════════════
-// LAPTOP STATUS
-// ═══════════════════════════════════════════
-async function checkLaptop() {
-  try {
-    const r = await fetch(SB_URL + '/rest/v1/laptops?order=last_heartbeat.desc&limit=1', { headers: SB_HDR });
-    const d = await r.json();
-    const dot = document.getElementById('lp-dot');
-    const st = document.getElementById('lp-status');
-
-    if (d.length > 0) {
-      const ago = Math.round((Date.now() - new Date(d[0].last_heartbeat)) / 60000);
-      const online = ago < 2;
-      dot.classList.toggle('on', online);
-      st.textContent = online
-        ? `Laptop: connected (${d[0].hostname || 'unknown'})`
-        : `Laptop: last seen ${ago}m ago`;
-      document.getElementById('n-sessions').textContent = online ? '1' : '0';
-    } else {
-      dot.classList.remove('on');
-      st.textContent = 'Laptop: no listener detected';
-      document.getElementById('n-sessions').textContent = '0';
-    }
-  } catch (e) {
-    document.getElementById('lp-status').textContent = 'Laptop: offline';
-  }
+// ═══ LAPTOP STATUS ═══
+async function checkLaptop(){
+  try{
+    const r=await fetch(SB_URL+'/rest/v1/laptops?order=last_heartbeat.desc&limit=1',{headers:SB_HDR});
+    const d=await r.json();
+    const dot=document.getElementById('lp-dot');
+    const st=document.getElementById('lp-status');
+    if(d.length>0){
+      const ago=Math.round((Date.now()-new Date(d[0].last_heartbeat))/60000);
+      const on=ago<2;
+      dot.classList.toggle('on',on);
+      st.textContent=on?'Connected':'Last seen '+ago+'m ago';
+      document.getElementById('n-sessions').textContent=on?'1':'0';
+    } else{dot.classList.remove('on');st.textContent='Offline';document.getElementById('n-sessions').textContent='0';}
+  }catch(e){document.getElementById('lp-status').textContent='Offline';}
 }
 
-// ═══════════════════════════════════════════
-// UTILS
-// ═══════════════════════════════════════════
-function escapeHtml(s) {
-  const d = document.createElement('div');
-  d.textContent = s;
-  return d.innerHTML;
-}
-
-function toast(msg, err = false) {
-  const t = document.getElementById('toast');
-  t.textContent = msg;
-  t.className = 'toast show' + (err ? ' err' : '');
-  setTimeout(() => t.className = 'toast', 2500);
+// ═══ UTILS ═══
+function esc(s){const d=document.createElement('div');d.textContent=s;return d.innerHTML;}
+function toast(msg,err=false){
+  const t=document.getElementById('toast');
+  t.textContent=msg;
+  t.className='toast show'+(err?' err':'');
+  setTimeout(()=>t.className='toast',2500);
 }
 
 // Auto-expand textarea
-document.getElementById('cmd-input').addEventListener('input', function() {
-  this.style.height = 'auto';
-  this.style.height = Math.min(this.scrollHeight, 120) + 'px';
-});
+const cmdInput=document.getElementById('cmd-input');
+cmdInput.addEventListener('input',function(){this.style.height='auto';this.style.height=Math.min(this.scrollHeight,100)+'px';});
+cmdInput.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendCommand();}});
 
-// Enter to send
-document.getElementById('cmd-input').addEventListener('keydown', (e) => {
-  if (e.key === 'Enter' && !e.shiftKey) {
-    e.preventDefault();
-    sendCommand();
-  }
-});
-
-// ═══════════════════════════════════════════
-// INIT
-// ═══════════════════════════════════════════
-function init() {
+// ═══ INIT ═══
+function init(){
   renderProjects();
   renderMacActions();
   loadHistory();
   checkLaptop();
-
-  // Recurring checks
-  setInterval(checkLaptop, 30000);
-  setInterval(loadHistory, 15000);
+  setInterval(checkLaptop,30000);
+  setInterval(loadHistory,15000);
 }
 </script>
 </body>
