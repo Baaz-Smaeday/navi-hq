@@ -1078,8 +1078,29 @@ for s in '''$navi_arg'''.split('&&'):
     return
   fi
 
-  # NEW WARP + CLAUDE (like v1: opens new tab with Claude in project dir)
-  if echo "$cmd_lower" | grep -qE "(new claude|start claude|open claude|claude chat|new chat|new warp|open warp)"; then
+  # MAC ACTIONS first (open app, lock, screenshot) — before special commands
+  local mac_cmd; mac_cmd=$(get_mac_action "$cmd_lower")
+  if [ -n "$mac_cmd" ]; then
+    run_mac_action "$id" "$cmd_lower"
+    return
+  fi
+  if echo "$cmd_lower" | grep -qE "^open "; then
+    local app_name; app_name=$(echo "$cmd_lower" | sed 's/^open //')
+    mac_cmd=$(get_mac_action "open $app_name")
+    if [ -n "$mac_cmd" ]; then
+      run_mac_action "$id" "open $app_name"
+      return
+    fi
+    if echo "$cmd_lower" | grep -qE "^open https?://"; then
+      local url; url=$(echo "$cmd" | sed 's/^[Oo]pen //')
+      open "$url" 2>/dev/null
+      update_status "$id" "done" "Opened $url"
+      return
+    fi
+  fi
+
+  # NEW CLAUDE (only triggers for explicit "new claude" or "start claude", not "open warp")
+  if echo "$cmd_lower" | grep -qE "(new claude|start claude|open claude|claude chat|new chat)"; then
     local project_dir="$HOME"
     if [ "$project" != "general" ] && [ -n "$project" ]; then
       project_dir=$(get_project_dir "$project")
@@ -1100,29 +1121,6 @@ for s in '''$navi_arg'''.split('&&'):
     fi
     run_claude_code "$id" "$msg" "$proj_dir"
     return
-  fi
-
-  # MAC ACTIONS (open app, lock, screenshot)
-  local mac_cmd; mac_cmd=$(get_mac_action "$cmd_lower")
-  if [ -n "$mac_cmd" ]; then
-    run_mac_action "$id" "$cmd_lower"
-    return
-  fi
-  # Partial match: "open X"
-  if echo "$cmd_lower" | grep -qE "^open "; then
-    local app_name; app_name=$(echo "$cmd_lower" | sed 's/^open //')
-    mac_cmd=$(get_mac_action "open $app_name")
-    if [ -n "$mac_cmd" ]; then
-      run_mac_action "$id" "open $app_name"
-      return
-    fi
-    # Open URL
-    if echo "$cmd_lower" | grep -qE "^open https?://"; then
-      local url; url=$(echo "$cmd" | sed 's/^[Oo]pen //')
-      open "$url" 2>/dev/null
-      update_status "$id" "done" "Opened $url"
-      return
-    fi
   fi
 
   # GIT SHORTCUTS
