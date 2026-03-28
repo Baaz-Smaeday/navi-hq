@@ -1166,7 +1166,7 @@ async function startPreview(slug){
       const r = await fetch(SB_URL+'/rest/v1/commands?order=created_at.desc&limit=1',{headers:SB_HDR});
       const d = await r.json();
       if(d.length>0 && d[0].result && d[0].status==='done'){
-        const urlMatch = d[0].result.match(/URL:\s*(https?:\/\/[^\s]+)/);
+        const urlMatch = d[0].result.match(/URL:\s*(https?:\/\/[^\s\\]+)/);
         if(urlMatch){
           const url = urlMatch[1];
           activePreviews[slug] = {url};
