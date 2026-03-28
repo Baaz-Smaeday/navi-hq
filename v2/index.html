@@ -1217,7 +1217,7 @@ async function sendCommand(){
   input.style.height='auto';
 }
 
-async function sendDirect(cmd,project,tool){
+async function sendDirect(cmd,project,tool,silent=false){
   if(!checkRate()){toast('Rate limit: max 10/min',true);return;}
   const btn=document.getElementById('cmd-send');
   btn.disabled=true;
@@ -1230,9 +1230,11 @@ async function sendDirect(cmd,project,tool){
       body:JSON.stringify({command:encCmd,project:project||'general',tool:tool||'claude-code',secret:CONFIG.shared_secret})
     });
     if(r.ok){
-      toast('Command sent');
-      showResult('Waiting for response...',null,true);
-      startPolling();
+      if(!silent){
+        toast('Command sent');
+        showResult('Waiting for response...',null,true);
+        startPolling();
+      }
       loadHistory();
     } else toast('Failed to send',true);
   }catch(e){toast('Network error',true);}
@@ -1333,8 +1335,8 @@ async function startPreview(slug){
   document.getElementById('preview-loading').style.display = 'block';
   document.getElementById('preview-content').style.display = 'none';
 
-  // Send preview start command
-  await sendDirect(`__navi_preview::start::${slug}`, slug, 'shell');
+  // Send preview start command (silent — don't trigger main result panel)
+  await sendDirect(`__navi_preview::start::${slug}`, slug, 'shell', true);
 
   // Poll for the URL in the result
   let attempts = 0;
@@ -1395,7 +1397,7 @@ function closePreview(){
 
 async function stopCurrentPreview(){
   if(!currentPreviewSlug) return;
-  await sendDirect(`__navi_preview::stop::${currentPreviewSlug}`, currentPreviewSlug, 'shell');
+  await sendDirect(`__navi_preview::stop::${currentPreviewSlug}`, currentPreviewSlug, 'shell', true);
   delete activePreviews[currentPreviewSlug];
   closePreview();
   renderProjects();
@@ -1453,7 +1455,7 @@ async function runNaviCmd(cmd){
   const resultEl = document.getElementById('git-result');
   resultEl.innerHTML = '<div class="preview-status"><div class="preview-spinner"></div>Running...</div>';
 
-  await sendDirect(`__navi_${cmd}::`, gitModalProject, 'shell');
+  await sendDirect(`__navi_${cmd}::`, gitModalProject, 'shell', true);
 
   // Poll for result
   let attempts = 0;
@@ -1498,7 +1500,7 @@ async function runCommit(){
   const resultEl = document.getElementById('git-result');
   resultEl.innerHTML = '<div class="preview-status"><div class="preview-spinner"></div>Committing...</div>';
 
-  await sendDirect(`__navi_commit::${msg}`, gitModalProject, 'shell');
+  await sendDirect(`__navi_commit::${msg}`, gitModalProject, 'shell', true);
 
   let attempts = 0;
   const commitPoll = setInterval(async ()=>{
@@ -1523,7 +1525,7 @@ async function runCreatePR(){
   const resultEl = document.getElementById('git-result');
   resultEl.innerHTML = '<div class="preview-status"><div class="preview-spinner"></div>Creating PR...</div>';
 
-  await sendDirect(`__navi_pr::${msg}`, gitModalProject, 'shell');
+  await sendDirect(`__navi_pr::${msg}`, gitModalProject, 'shell', true);
 
   let attempts = 0;
   const prPoll = setInterval(async ()=>{
@@ -1587,7 +1589,7 @@ async function switchBranch(branch){
   const resultEl = document.getElementById('git-result');
   resultEl.innerHTML = '<div class="preview-status"><div class="preview-spinner"></div>Switching...</div>';
 
-  await sendDirect(`__navi_checkout::${branch}`, gitModalProject, 'shell');
+  await sendDirect(`__navi_checkout::${branch}`, gitModalProject, 'shell', true);
 
   let attempts = 0;
   const poll = setInterval(async ()=>{
@@ -1683,7 +1685,7 @@ async function browseDir(path){
   filePath=path;
   updateBreadcrumb(path);
   document.getElementById('file-view').innerHTML='<div class="preview-status"><div class="preview-spinner"></div>Loading...</div>';
-  await sendDirect(`__navi_ls::${path}`,fileProject,'shell');
+  await sendDirect(`__navi_ls::${path}`,fileProject,'shell',true);
   let attempts=0;
   const poll=setInterval(async()=>{
     attempts++;
@@ -1721,7 +1723,7 @@ function renderFileList(output,basePath){
 
 async function viewFile(path){
   document.getElementById('file-view').innerHTML='<div class="preview-status"><div class="preview-spinner"></div>Loading file...</div>';
-  await sendDirect(`__navi_cat::${path}`,fileProject,'shell');
+  await sendDirect(`__navi_cat::${path}`,fileProject,'shell',true);
   let attempts=0;
   const poll=setInterval(async()=>{
     attempts++;
