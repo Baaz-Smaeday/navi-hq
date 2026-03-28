@@ -48,6 +48,12 @@ fi
 
 POLL_SEC=3
 HEARTBEAT_SEC=30
+# Auto-detect: foreground (TTY) or background (LaunchAgent)
+if [ -t 0 ]; then
+  RUN_MODE="foreground"
+else
+  RUN_MODE="background"
+fi
 SESSION_DIR="/tmp/navi-sessions"
 LOG_FILE="/tmp/navi-listener.log"
 LAST_HEARTBEAT=0
@@ -1157,9 +1163,15 @@ for s in '''$navi_arg'''.split('&&'):
 
   case "${tool:-$DEFAULT_TOOL}" in
     claude-code)
-      # Always run claude -p silently — result streams back to phone
-      # This works reliably from background LaunchAgent
-      run_claude_code "$id" "$cmd" "$project_dir"
+      if [ "$RUN_MODE" = "foreground" ] && [ "$project" != "general" ] && [ -n "$project" ]; then
+        # Foreground: open Warp tab with Claude — visible on laptop
+        log "Foreground mode: routing to Warp tab"
+        smart_warp_route "$project" "$project_dir" "$cmd"
+        update_status "$id" "done" "Sent to Claude in $project — check laptop"
+      else
+        # Background: run claude -p silently — result to phone
+        run_claude_code "$id" "$cmd" "$project_dir"
+      fi
       ;;
     warp)
       # Open a NEW Warp tab with Claude in the project dir
@@ -1193,6 +1205,7 @@ echo "║  Tools: claude-code, warp, cursor, copilot,"
 echo "║         chatgpt, gemini, claude-web, aider,"
 echo "║         shell"
 echo "║  Polling: every ${POLL_SEC}s                      ║"
+echo "║  Mode: $RUN_MODE"
 echo "║  Waiting for commands...                   ║"
 echo "╚═══════════════════════════════════════════╝"
 echo ""
