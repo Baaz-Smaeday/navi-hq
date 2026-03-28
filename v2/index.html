@@ -10,6 +10,7 @@
 <meta name="apple-mobile-web-app-title" content="Navi HQ">
 <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect fill='%230a0a0a' width='100' height='100' rx='20'/><text y='68' x='50' text-anchor='middle' font-size='50' fill='%2300e676'>N</text></svg>">
 <title>Navi HQ</title>
+<script src="https://unpkg.com/lucide@latest"></script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;-webkit-touch-callout:none}
 :root{
@@ -714,10 +715,10 @@ body{
 
       <div class="sec">Power Tools</div>
       <div class="mac-grid">
-        <div class="mac-btn" onclick="runPowerCmd('screenshot')"><div class="mac-ico">&#128247;</div><div class="mac-lbl">Screenshot</div></div>
-        <div class="mac-btn" onclick="runPowerCmd('clipboard_get')"><div class="mac-ico">&#128203;</div><div class="mac-lbl">Get Clipboard</div></div>
-        <div class="mac-btn" onclick="promptClipboardSet()"><div class="mac-ico">&#128221;</div><div class="mac-lbl">Set Clipboard</div></div>
-        <div class="mac-btn" onclick="runPowerCmd('sysinfo')"><div class="mac-ico">&#128187;</div><div class="mac-lbl">System Info</div></div>
+        <div class="mac-btn" onclick="runPowerCmd('screenshot')"><div class="mac-ico"><i data-lucide="camera" style="width:22px;height:22px"></i></div><div class="mac-lbl">Screenshot</div></div>
+        <div class="mac-btn" onclick="runPowerCmd('clipboard_get')"><div class="mac-ico"><i data-lucide="clipboard" style="width:22px;height:22px"></i></div><div class="mac-lbl">Get Clipboard</div></div>
+        <div class="mac-btn" onclick="promptClipboardSet()"><div class="mac-ico"><i data-lucide="clipboard-edit" style="width:22px;height:22px"></i></div><div class="mac-lbl">Set Clipboard</div></div>
+        <div class="mac-btn" onclick="runPowerCmd('sysinfo')"><div class="mac-ico"><i data-lucide="cpu" style="width:22px;height:22px"></i></div><div class="mac-lbl">System Info</div></div>
       </div>
 
       <div class="sec">Pipeline</div>
@@ -781,10 +782,10 @@ body{
 
   <!-- Tab Bar -->
   <div class="tab-bar">
-    <div class="tab-item active" onclick="switchTab('dashboard')"><div class="tab-ico">&#127968;</div><div class="tab-lbl">Dashboard</div></div>
-    <div class="tab-item" onclick="switchTab('tools')"><div class="tab-ico">&#9889;</div><div class="tab-lbl">Tools</div></div>
-    <div class="tab-item" onclick="switchTab('terminal')"><div class="tab-ico">&#9000;</div><div class="tab-lbl">Terminal</div></div>
-    <div class="tab-item" onclick="switchTab('settings')"><div class="tab-ico">&#9881;</div><div class="tab-lbl">Settings</div></div>
+    <div class="tab-item active" onclick="switchTab('dashboard')"><div class="tab-ico"><i data-lucide="layout-dashboard" style="width:20px;height:20px"></i></div><div class="tab-lbl">Dashboard</div></div>
+    <div class="tab-item" onclick="switchTab('tools')"><div class="tab-ico"><i data-lucide="zap" style="width:20px;height:20px"></i></div><div class="tab-lbl">Tools</div></div>
+    <div class="tab-item" onclick="switchTab('terminal')"><div class="tab-ico"><i data-lucide="terminal" style="width:20px;height:20px"></i></div><div class="tab-lbl">Terminal</div></div>
+    <div class="tab-item" onclick="switchTab('settings')"><div class="tab-ico"><i data-lucide="settings" style="width:20px;height:20px"></i></div><div class="tab-lbl">Settings</div></div>
   </div>
 
   <!-- Command Bar -->
@@ -1126,13 +1127,14 @@ function quickAction(project, action){
 }
 
 // ═══ QUICK ACTION GRIDS ═══
+function lucideIcon(name,size=22){return `<i data-lucide="${name}" style="width:${size}px;height:${size}px"></i>`;}
 function renderMacActions(){
   // Apps grid
   const grid = document.getElementById('mac-grid');
   grid.innerHTML='';
   const icons = {
-    'open chrome':'&#127760;','open safari':'&#129517;','open warp':'&#9000;',
-    'open finder':'&#128193;','open vscode':'&#128187;','lock':'&#128274;','screenshot':'&#128248;'
+    'open chrome':lucideIcon('globe'),'open safari':lucideIcon('compass'),'open warp':lucideIcon('square-terminal'),
+    'open finder':lucideIcon('folder'),'open vscode':lucideIcon('file-code'),'lock':lucideIcon('lock'),'screenshot':lucideIcon('camera')
   };
   const labels = {
     'open chrome':'Chrome','open safari':'Safari','open warp':'Warp',
@@ -1142,7 +1144,7 @@ function renderMacActions(){
     const btn = document.createElement('div');
     btn.className='mac-btn';
     btn.onclick = ()=> sendDirect(key,'general','shell');
-    btn.innerHTML=`<div class="mac-ico">${icons[key]||'&#9889;'}</div><div class="mac-lbl">${labels[key]||key}</div>`;
+    btn.innerHTML=`<div class="mac-ico">${icons[key]||lucideIcon('zap')}</div><div class="mac-lbl">${labels[key]||key}</div>`;
     grid.appendChild(btn);
   });
 
@@ -1150,18 +1152,18 @@ function renderMacActions(){
   const devGrid = document.getElementById('dev-grid');
   devGrid.innerHTML='';
   const devActions = [
-    {ico:'&#128736;',lbl:'Git Status',cmd:'git status',tool:'shell'},
-    {ico:'&#8595;',lbl:'Git Pull',cmd:'git pull',tool:'shell'},
-    {ico:'&#8593;',lbl:'Git Push',cmd:'git push',tool:'shell'},
-    {ico:'&#128220;',lbl:'Git Log',cmd:'git log --oneline -10',tool:'shell'},
-    {ico:'&#9889;',lbl:'NPM Test',cmd:'npm test',tool:'shell'},
-    {ico:'&#128230;',lbl:'NPM Build',cmd:'npm run build',tool:'shell'},
-    {ico:'&#128187;',lbl:'NPM Dev',cmd:'npm run dev &',tool:'shell'},
-    {ico:'&#128269;',lbl:'Disk Space',cmd:'df -h /',tool:'shell'},
-    {ico:'&#128640;',lbl:'Deploy',cmd:'git add . && git commit -m "deploy" && git push && vercel --prod',tool:'shell'},
-    {ico:'&#128196;',lbl:'Env Vars',cmd:'cat .env | head -20',tool:'shell'},
-    {ico:'&#128300;',lbl:'Processes',cmd:'ps aux | head -20',tool:'shell'},
-    {ico:'&#127760;',lbl:'IP Address',cmd:'curl -s ifconfig.me',tool:'shell'},
+    {ico:lucideIcon('git-branch'),lbl:'Git Status',cmd:'git status',tool:'shell'},
+    {ico:lucideIcon('download'),lbl:'Git Pull',cmd:'git pull',tool:'shell'},
+    {ico:lucideIcon('upload'),lbl:'Git Push',cmd:'git push',tool:'shell'},
+    {ico:lucideIcon('list'),lbl:'Git Log',cmd:'git log --oneline -10',tool:'shell'},
+    {ico:lucideIcon('check-circle'),lbl:'NPM Test',cmd:'npm test',tool:'shell'},
+    {ico:lucideIcon('package'),lbl:'NPM Build',cmd:'npm run build',tool:'shell'},
+    {ico:lucideIcon('play'),lbl:'NPM Dev',cmd:'npm run dev &',tool:'shell'},
+    {ico:lucideIcon('hard-drive'),lbl:'Disk Space',cmd:'df -h /',tool:'shell'},
+    {ico:lucideIcon('rocket'),lbl:'Deploy',cmd:'git add . && git commit -m "deploy" && git push && vercel --prod',tool:'shell'},
+    {ico:lucideIcon('file-text'),lbl:'Env Vars',cmd:'cat .env | head -20',tool:'shell'},
+    {ico:lucideIcon('activity'),lbl:'Processes',cmd:'ps aux | head -20',tool:'shell'},
+    {ico:lucideIcon('wifi'),lbl:'IP Address',cmd:'curl -s ifconfig.me',tool:'shell'},
   ];
   devActions.forEach(a=>{
     const btn = document.createElement('div');
@@ -1175,18 +1177,18 @@ function renderMacActions(){
   const aiGrid = document.getElementById('ai-grid');
   aiGrid.innerHTML='';
   const aiActions = [
-    {ico:'&#129302;',lbl:'New Claude',cmd:'new claude chat',tool:'claude-code'},
-    {ico:'&#128421;',lbl:'Warp+Claude',cmd:'open warp',tool:'warp'},
-    {ico:'&#128172;',lbl:'ChatGPT',cmd:'Hello',tool:'chatgpt'},
-    {ico:'&#10024;',lbl:'Gemini',cmd:'Hello',tool:'gemini'},
-    {ico:'&#127913;',lbl:'Cursor AI',cmd:'Hello',tool:'cursor'},
-    {ico:'&#128640;',lbl:'Claude Web',cmd:'Hello',tool:'claude-web'},
-    {ico:'&#9881;',lbl:'Copilot',cmd:'Hello',tool:'copilot'},
-    {ico:'&#128295;',lbl:'Health Check',cmd:'Check all project health and report status',tool:'claude-code'},
-    {ico:'&#128170;',lbl:'Fix Bugs',cmd:'Find and fix any bugs or errors in this project',tool:'claude-code'},
-    {ico:'&#128196;',lbl:'Code Review',cmd:'Review the recent changes and suggest improvements',tool:'claude-code'},
-    {ico:'&#128221;',lbl:'Write Tests',cmd:'Write tests for the main components',tool:'claude-code'},
-    {ico:'&#128161;',lbl:'Explain Code',cmd:'Explain the project structure and main files',tool:'claude-code'},
+    {ico:lucideIcon('terminal'),lbl:'New Claude',cmd:'new claude chat',tool:'claude-code'},
+    {ico:lucideIcon('monitor'),lbl:'Warp+Claude',cmd:'open warp',tool:'warp'},
+    {ico:lucideIcon('message-square'),lbl:'ChatGPT',cmd:'Hello',tool:'chatgpt'},
+    {ico:lucideIcon('sparkles'),lbl:'Gemini',cmd:'Hello',tool:'gemini'},
+    {ico:lucideIcon('code'),lbl:'Cursor AI',cmd:'Hello',tool:'cursor'},
+    {ico:lucideIcon('bot'),lbl:'Claude Web',cmd:'Hello',tool:'claude-web'},
+    {ico:lucideIcon('braces'),lbl:'Copilot',cmd:'Hello',tool:'copilot'},
+    {ico:lucideIcon('heart-pulse'),lbl:'Health Check',cmd:'Check all project health and report status',tool:'claude-code'},
+    {ico:lucideIcon('bug'),lbl:'Fix Bugs',cmd:'Find and fix any bugs or errors in this project',tool:'claude-code'},
+    {ico:lucideIcon('search'),lbl:'Code Review',cmd:'Review the recent changes and suggest improvements',tool:'claude-code'},
+    {ico:lucideIcon('test-tube'),lbl:'Write Tests',cmd:'Write tests for the main components',tool:'claude-code'},
+    {ico:lucideIcon('lightbulb'),lbl:'Explain Code',cmd:'Explain the project structure and main files',tool:'claude-code'},
   ];
   aiActions.forEach(a=>{
     const btn = document.createElement('div');
@@ -1195,6 +1197,8 @@ function renderMacActions(){
     btn.innerHTML=`<div class="mac-ico">${a.ico}</div><div class="mac-lbl">${a.lbl}</div>`;
     aiGrid.appendChild(btn);
   });
+  // Render Lucide icons after DOM update
+  setTimeout(()=>lucide.createIcons(),100);
 }
 
 // ═══ SEND COMMAND ═══
@@ -1938,6 +1942,7 @@ function init(){
   setInterval(checkLaptop,30000);
   setInterval(loadHistory,15000);
   setInterval(checkAllHealth,60000);
+  setTimeout(()=>lucide.createIcons(),200);
 }
 </script>
 </body>
