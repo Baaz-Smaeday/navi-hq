@@ -167,9 +167,20 @@ body{
 .result-body{
   padding:14px;font-family:'SF Mono',Monaco,'Cascadia Code',monospace;
   font-size:12px;line-height:1.6;max-height:50vh;overflow-y:auto;
-  white-space:pre-wrap;word-break:break-word;color:var(--text2);
+  word-break:break-word;color:var(--text2);
 }
-.result-foot{padding:6px 14px;border-top:1px solid var(--border);font-size:9px;color:var(--dim)}
+.result-body code{background:var(--card2);padding:1px 5px;border-radius:4px;font-size:11px}
+.result-body pre{background:#111;padding:10px;border-radius:8px;overflow-x:auto;margin:8px 0;border:1px solid var(--border)}
+.result-body pre code{background:none;padding:0}
+.result-body strong{color:var(--text);font-weight:700}
+.result-body a{color:var(--accent2);text-decoration:none}
+.result-body ul,.result-body ol{padding-left:18px;margin:6px 0}
+.result-body li{margin:2px 0}
+.result-body h1,.result-body h2,.result-body h3{color:var(--text);margin:10px 0 4px;font-size:13px}
+.result-body p{margin:4px 0}
+.result-foot{display:flex;align-items:center;justify-content:space-between;padding:6px 14px;border-top:1px solid var(--border);font-size:9px;color:var(--dim)}
+.copy-btn{font-size:9px;padding:3px 8px;border-radius:5px;background:var(--card2);color:var(--dim2);border:1px solid var(--border);cursor:pointer}
+.copy-btn:active{background:var(--accent);color:#000}
 .streaming{color:var(--accent);animation:pulse 1s ease-in-out infinite}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
 @keyframes slideUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
@@ -303,7 +314,7 @@ body{
         <button class="result-x" onclick="closeResult()">&times;</button>
       </div>
       <div class="result-body" id="result-body"></div>
-      <div class="result-foot" id="result-foot"></div>
+      <div class="result-foot"><span id="result-foot"></span><button class="copy-btn" onclick="copyResult()">Copy</button></div>
     </div>
 
     <!-- Projects -->
@@ -365,7 +376,7 @@ body{
 const CONFIG = {
   supabase_url: "https://nibemnomfzflvpnlfgbh.supabase.co",
   supabase_anon_key: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5pYmVtbm9tZnpmbHZwbmxmZ2JoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQyOTMzNzYsImV4cCI6MjA4OTg2OTM3Nn0.0gQPv67Bh5Fh1PocqENfPCm-dWQDe41886VfLUgQhuM",
-  shared_secret: "navi_2024_xk9m",
+  shared_secret: "navi_5591df03b5776c8c",
   pin_hash: 'b1ac3a14adbfd6d9c4c4641a18c04de2b5370726980041058edfa926a49a9fb5',
   projects: {
   "complyfleet": {
@@ -644,8 +655,12 @@ function renderMacActions(){
     {ico:'&#128220;',lbl:'Git Log',cmd:'git log --oneline -10',tool:'shell'},
     {ico:'&#9889;',lbl:'NPM Test',cmd:'npm test',tool:'shell'},
     {ico:'&#128230;',lbl:'NPM Build',cmd:'npm run build',tool:'shell'},
-    {ico:'&#128187;',lbl:'NPM Dev',cmd:'npm run dev',tool:'shell'},
+    {ico:'&#128187;',lbl:'NPM Dev',cmd:'npm run dev &',tool:'shell'},
     {ico:'&#128269;',lbl:'Disk Space',cmd:'df -h /',tool:'shell'},
+    {ico:'&#128640;',lbl:'Deploy',cmd:'git add . && git commit -m "deploy" && git push && vercel --prod',tool:'shell'},
+    {ico:'&#128196;',lbl:'Env Vars',cmd:'cat .env | head -20',tool:'shell'},
+    {ico:'&#128300;',lbl:'Processes',cmd:'ps aux | head -20',tool:'shell'},
+    {ico:'&#127760;',lbl:'IP Address',cmd:'curl -s ifconfig.me',tool:'shell'},
   ];
   devActions.forEach(a=>{
     const btn = document.createElement('div');
@@ -660,13 +675,17 @@ function renderMacActions(){
   aiGrid.innerHTML='';
   const aiActions = [
     {ico:'&#129302;',lbl:'New Claude',cmd:'new claude chat',tool:'claude-code'},
-    {ico:'&#128421;',lbl:'Warp+Claude',cmd:'new warp',tool:'warp'},
+    {ico:'&#128421;',lbl:'Warp+Claude',cmd:'open warp',tool:'warp'},
     {ico:'&#128172;',lbl:'ChatGPT',cmd:'Hello',tool:'chatgpt'},
     {ico:'&#10024;',lbl:'Gemini',cmd:'Hello',tool:'gemini'},
     {ico:'&#127913;',lbl:'Cursor AI',cmd:'Hello',tool:'cursor'},
     {ico:'&#128640;',lbl:'Claude Web',cmd:'Hello',tool:'claude-web'},
     {ico:'&#9881;',lbl:'Copilot',cmd:'Hello',tool:'copilot'},
-    {ico:'&#128295;',lbl:'Health Check',cmd:'Check all project health and report',tool:'claude-code'},
+    {ico:'&#128295;',lbl:'Health Check',cmd:'Check all project health and report status',tool:'claude-code'},
+    {ico:'&#128170;',lbl:'Fix Bugs',cmd:'Find and fix any bugs or errors in this project',tool:'claude-code'},
+    {ico:'&#128196;',lbl:'Code Review',cmd:'Review the recent changes and suggest improvements',tool:'claude-code'},
+    {ico:'&#128221;',lbl:'Write Tests',cmd:'Write tests for the main components',tool:'claude-code'},
+    {ico:'&#128161;',lbl:'Explain Code',cmd:'Explain the project structure and main files',tool:'claude-code'},
   ];
   aiActions.forEach(a=>{
     const btn = document.createElement('div');
@@ -746,23 +765,58 @@ async function pollResult(){
 }
 
 // ═══ RESULT DISPLAY ═══
+let lastRawResult='';
+
+function renderMd(text){
+  if(!text) return '';
+  let h=esc(text);
+  // Code blocks
+  h=h.replace(/```(\w*)\n([\s\S]*?)```/g,'<pre><code>$2</code></pre>');
+  // Inline code
+  h=h.replace(/`([^`]+)`/g,'<code>$1</code>');
+  // Bold
+  h=h.replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>');
+  // Headers
+  h=h.replace(/^### (.+)$/gm,'<h3>$1</h3>');
+  h=h.replace(/^## (.+)$/gm,'<h2>$1</h2>');
+  h=h.replace(/^# (.+)$/gm,'<h1>$1</h1>');
+  // Lists
+  h=h.replace(/^[-*] (.+)$/gm,'<li>$1</li>');
+  h=h.replace(/(<li>.*<\/li>\n?)+/g,'<ul>$&</ul>');
+  // Links
+  h=h.replace(/\[(.+?)\]\((.+?)\)/g,'<a href="$2" target="_blank">$1</a>');
+  // Line breaks
+  h=h.replace(/\n/g,'<br>');
+  return h;
+}
+
 function showResult(text,time,streaming=false,isError=false){
   const panel=document.getElementById('result-panel');
   const body=document.getElementById('result-body');
   const foot=document.getElementById('result-foot');
   const title=document.getElementById('result-title');
   panel.classList.add('show');
-  body.textContent=text||'';
+  lastRawResult=text||'';
+  if(streaming){
+    body.textContent=text||'';
+    body.classList.add('streaming');
+    foot.textContent='Waiting...';
+  } else {
+    body.innerHTML=renderMd(text||'');
+    body.classList.remove('streaming');
+    foot.textContent=time?new Date(time).toLocaleString('en-GB'):'';
+  }
   title.textContent=streaming?'Streaming...':isError?'Error':'Result';
   title.style.color=isError?'var(--danger)':'var(--accent)';
-  if(streaming){body.classList.add('streaming');foot.textContent='Waiting...';}
-  else{body.classList.remove('streaming');foot.textContent=time?new Date(time).toLocaleString('en-GB'):'';}
   body.scrollTop=body.scrollHeight;
-  // Scroll to result
   panel.scrollIntoView({behavior:'smooth',block:'nearest'});
 }
 
 function closeResult(){document.getElementById('result-panel').classList.remove('show');}
+
+function copyResult(){
+  navigator.clipboard.writeText(lastRawResult).then(()=>toast('Copied!')).catch(()=>toast('Copy failed',true));
+}
 
 // ═══ HISTORY ═══
 async function loadHistory(){

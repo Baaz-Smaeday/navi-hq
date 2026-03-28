@@ -1,0 +1,14 @@
+# Navi HQ — never commit real credentials
+v2/navi-config.json
+v2/dist/
+*.env
+.env.*
+navi-config.json
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+/tmp/

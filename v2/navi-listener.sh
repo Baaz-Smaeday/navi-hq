@@ -385,6 +385,13 @@ route_command() {
   local id="$1" cmd="$2" project="$3" tool="$4"
   local cmd_lower; cmd_lower=$(echo "$cmd" | tr '[:upper:]' '[:lower:]')
 
+  # --- Safety check: block dangerous commands ---
+  if echo "$cmd_lower" | grep -qE "(rm -rf|rm -r /|drop table|drop database|format |mkfs|dd if=|shutdown|reboot|git push.*--force|git reset --hard|:(){ :|:& };:)"; then
+    log "BLOCKED dangerous command: $cmd"
+    update_status "$id" "error" "BLOCKED: This command is potentially destructive and was not executed.\n\nCommand: $cmd\n\nIf you really need to run this, use the shell tool with the exact command."
+    return
+  fi
+
   # --- Special commands (before tool routing) ---
 
   # NEW WARP + CLAUDE (like v1: opens new tab with Claude in project dir)

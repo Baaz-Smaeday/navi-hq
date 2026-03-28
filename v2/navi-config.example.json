@@ -1,0 +1,28 @@
+{
+  "supabase_url": "https://YOUR_PROJECT.supabase.co",
+  "supabase_anon_key": "YOUR_ANON_KEY",
+  "shared_secret": "GENERATED_BY_SETUP",
+  "listener_id": "",
+  "default_tool": "claude-code",
+  "projects": {
+    "my-project": {
+      "name": "My Project",
+      "dir": "/Users/you/Projects/my-project",
+      "url": "https://myproject.com",
+      "tags": ["Next.js"],
+      "quick_actions": ["git status", "run tests", "deploy"]
+    }
+  },
+  "tools": {
+    "claude-code": { "type": "cli", "command": "claude", "flags": "--max-turns 10" },
+    "cursor": { "type": "applescript", "app": "Cursor", "shortcut": "Cmd+L" },
+    "shell": { "type": "direct" },
+    "copilot": { "type": "applescript", "app": "Visual Studio Code", "shortcut": "Cmd+Shift+P" }
+  },
+  "mac_actions": {
+    "open chrome": "osascript -e 'tell application \"Google Chrome\" to activate'",
+    "open warp": "osascript -e 'tell application \"Warp\" to activate'",
+    "lock": "pmset displaysleepnow",
+    "screenshot": "screencapture -x ~/Desktop/navi-screenshot-$(date +%s).png"
+  }
+}
