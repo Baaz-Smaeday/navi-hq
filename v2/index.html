@@ -340,6 +340,73 @@ body{
 .preview-ctrl-btn.danger{border-color:#ff525233}
 .preview-ctrl-btn.danger:active{border-color:var(--danger);background:#1a0a0a;color:var(--danger)}
 .preview-status{text-align:center;padding:40px 20px;color:var(--dim2);font-size:13px}
+
+/* ═══ GIT/TEST CONTROLS ═══ */
+.git-btn{
+  font-size:10px;padding:6px 10px;border-radius:8px;
+  background:#ffab4022;color:var(--warn);
+  border:1px solid #ffab4033;font-weight:600;
+  cursor:pointer;transition:all 0.15s;
+}
+.git-btn:active{background:var(--warn);color:#000}
+.git-section{margin:16px 0 8px;font-size:11px;font-weight:700;color:var(--dim);text-transform:uppercase;letter-spacing:1px}
+.git-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
+.git-action-btn{
+  padding:14px 12px;border-radius:var(--radius-sm);
+  border:1px solid var(--border);background:var(--card);
+  color:var(--text);font-size:12px;font-weight:600;
+  cursor:pointer;text-align:center;transition:all 0.15s;
+}
+.git-action-btn:active{border-color:var(--accent);background:#0a1a0f}
+.git-action-btn .git-ico{font-size:20px;margin-bottom:4px}
+.git-action-btn.danger{color:var(--danger)}
+.git-action-btn.danger:active{border-color:var(--danger);background:#1a0a0a}
+.git-action-btn.success{color:var(--accent)}
+.git-action-btn.success:active{background:#0a1a0f}
+
+/* Diff viewer */
+.diff-view{
+  background:#0d0d0d;border:1px solid var(--border);
+  border-radius:var(--radius-sm);padding:12px;
+  font-family:'SF Mono',Monaco,monospace;font-size:11px;
+  line-height:1.5;max-height:50vh;overflow:auto;
+  white-space:pre-wrap;word-break:break-all;
+  margin:8px 0;
+}
+.diff-add{color:#4caf50;background:#1a2e1a}
+.diff-del{color:#ef5350;background:#2e1a1a}
+.diff-hdr{color:var(--accent2);font-weight:700}
+.diff-file{color:var(--warn);font-weight:700;margin-top:8px;display:block}
+.diff-stat{
+  background:var(--card);border:1px solid var(--border);
+  border-radius:var(--radius-sm);padding:10px 14px;
+  font-family:'SF Mono',Monaco,monospace;font-size:11px;
+  margin-bottom:8px;
+}
+.diff-stat-line{display:flex;justify-content:space-between;padding:2px 0}
+.diff-stat-add{color:#4caf50}.diff-stat-del{color:#ef5350}
+
+/* Commit input */
+.commit-input{
+  width:100%;padding:12px 14px;border-radius:var(--radius-sm);
+  border:1px solid var(--border);background:var(--bg);
+  color:var(--text);font-size:13px;outline:none;
+  font-family:inherit;margin:8px 0;
+}
+.commit-input:focus{border-color:var(--accent)}
+.commit-input::placeholder{color:var(--dim)}
+
+/* Branch selector */
+.branch-list{display:flex;flex-direction:column;gap:4px;margin:8px 0}
+.branch-item{
+  padding:10px 14px;border-radius:var(--radius-sm);
+  border:1px solid var(--border);background:var(--card);
+  font-size:12px;cursor:pointer;display:flex;
+  justify-content:space-between;align-items:center;
+}
+.branch-item:active{border-color:var(--accent);background:#0a1a0f}
+.branch-item.current{border-color:var(--accent);color:var(--accent)}
+.branch-tag{font-size:9px;padding:2px 6px;border-radius:4px;background:var(--accent-dim);color:var(--accent)}
 .preview-spinner{
   width:30px;height:30px;border:3px solid var(--border);
   border-top-color:var(--accent2);border-radius:50%;
@@ -362,6 +429,47 @@ body{
     <div class="pin-dot"></div><div class="pin-dot"></div>
   </div>
   <div id="login-error"></div>
+</div>
+
+<!-- ═══ GIT/TEST MODAL ═══ -->
+<div class="modal-overlay" id="git-modal">
+  <div class="modal-header">
+    <div class="modal-title" id="git-title">Git & Test</div>
+    <button class="modal-close" onclick="closeGitModal()">&times;</button>
+  </div>
+  <div class="modal-body" id="git-body">
+    <div class="git-section">Test & Build</div>
+    <div class="git-actions">
+      <button class="git-action-btn success" onclick="runNaviCmd('test')"><div class="git-ico">&#9889;</div>Run Tests</button>
+      <button class="git-action-btn" onclick="runNaviCmd('build')"><div class="git-ico">&#128230;</div>Build</button>
+    </div>
+
+    <div class="git-section">Changes</div>
+    <div class="git-actions">
+      <button class="git-action-btn" onclick="runNaviCmd('status')"><div class="git-ico">&#128196;</div>Status</button>
+      <button class="git-action-btn" onclick="runNaviCmd('diff')"><div class="git-ico">&#128195;</div>View Diff</button>
+    </div>
+
+    <div class="git-section">Commit & Push</div>
+    <input class="commit-input" id="commit-msg" type="text" placeholder="Commit message..." />
+    <div class="git-actions">
+      <button class="git-action-btn success" onclick="runCommit()"><div class="git-ico">&#10004;</div>Commit</button>
+      <button class="git-action-btn" onclick="runNaviCmd('push')"><div class="git-ico">&#8593;</div>Push</button>
+    </div>
+    <div class="git-actions">
+      <button class="git-action-btn" onclick="runCreatePR()"><div class="git-ico">&#128640;</div>Create PR</button>
+      <button class="git-action-btn danger" onclick="runNaviCmd('revert')"><div class="git-ico">&#8634;</div>Rollback</button>
+    </div>
+
+    <div class="git-section">Branches</div>
+    <div class="git-actions">
+      <button class="git-action-btn" onclick="runNaviCmd('branches')"><div class="git-ico">&#127796;</div>Branches</button>
+      <button class="git-action-btn" onclick="runNaviCmd('log')"><div class="git-ico">&#128220;</div>Git Log</button>
+    </div>
+    <div id="branch-list"></div>
+
+    <div id="git-result" style="margin-top:12px"></div>
+  </div>
 </div>
 
 <!-- ═══ PREVIEW MODAL ═══ -->
@@ -487,13 +595,13 @@ const CONFIG = {
   shared_secret: "navi_5591df03b5776c8c",
   pin_hash: 'b1ac3a14adbfd6d9c4c4641a18c04de2b5370726980041058edfa926a49a9fb5',
   projects: {
-  "complyfleet": {"name":"ComplyFleet","dir":"/Users/sifatdad/Desktop/complyfleet","url":"https://complyfleet.co.uk","tags":["Next.js","Supabase"],"quick_actions":["git status","run tests","deploy"],"dev_cmd":"npm run dev","dev_port":3000},
-  "desimind": {"name":"DesiMind","dir":"/Users/sifatdad/desimind","url":"https://desimind.co.uk","tags":["Next.js","Supabase"],"quick_actions":["git status","run tests"],"dev_cmd":"npm run dev","dev_port":3001},
-  "xeagle-booking": {"name":"XEagle Booking","dir":"/Users/sifatdad/xeagle-booking","url":null,"tags":["Courier","React"],"quick_actions":["git status","run tests"],"dev_cmd":"npm run dev","dev_port":3002},
-  "eagle-academy": {"name":"Eagle Academy","dir":"/Users/sifatdad/Documents/Eagle Academy","url":null,"tags":["React","Education"],"quick_actions":["git status","run tests"],"dev_cmd":"npm run dev","dev_port":3003},
-  "loadlink": {"name":"LoadLink","dir":"/Users/sifatdad/LoadLink","url":null,"tags":["React Native"],"quick_actions":["git status","run tests"],"dev_cmd":"npx expo start","dev_port":8081},
-  "baaz-delivery": {"name":"Baaz Delivery CMS","dir":"/Users/sifatdad/Repo Rutiva/Baaz-Delivery-CMS","url":null,"tags":["CMS"],"quick_actions":["git status"],"dev_cmd":"npm run dev","dev_port":3004},
-  "navi-hq": {"name":"Navi HQ","dir":"/Users/sifatdad/Projects/navi-hq","url":"https://baaz-smaeday.github.io/navi-hq/","tags":["Dashboard"],"quick_actions":["git status"],"dev_cmd":"npx serve .","dev_port":3005}
+  "complyfleet": {"name":"ComplyFleet","dir":"/Users/sifatdad/Desktop/complyfleet","url":"https://complyfleet.co.uk","tags":["Next.js","Supabase"],"quick_actions":["git status","run tests","deploy"],"dev_cmd":"npm run dev","dev_port":3000,"test_cmd":"npm test","build_cmd":"npm run build"},
+  "desimind": {"name":"DesiMind","dir":"/Users/sifatdad/desimind","url":"https://desimind.co.uk","tags":["Next.js","Supabase"],"quick_actions":["git status","run tests"],"dev_cmd":"npm run dev","dev_port":3001,"test_cmd":"npm test","build_cmd":"npm run build"},
+  "xeagle-booking": {"name":"XEagle Booking","dir":"/Users/sifatdad/xeagle-booking","url":null,"tags":["Courier","React"],"quick_actions":["git status","run tests"],"dev_cmd":"npm run dev","dev_port":3002,"test_cmd":"npm test","build_cmd":"npm run build"},
+  "eagle-academy": {"name":"Eagle Academy","dir":"/Users/sifatdad/Documents/Eagle Academy","url":null,"tags":["React","Education"],"quick_actions":["git status","run tests"],"dev_cmd":"npm run dev","dev_port":3003,"test_cmd":"npm test","build_cmd":"npm run build"},
+  "loadlink": {"name":"LoadLink","dir":"/Users/sifatdad/LoadLink","url":null,"tags":["React Native"],"quick_actions":["git status","run tests"],"dev_cmd":"npx expo start","dev_port":8081,"test_cmd":"npm test","build_cmd":"npx expo export"},
+  "baaz-delivery": {"name":"Baaz Delivery CMS","dir":"/Users/sifatdad/Repo Rutiva/Baaz-Delivery-CMS","url":null,"tags":["CMS"],"quick_actions":["git status"],"dev_cmd":"npm run dev","dev_port":3004,"test_cmd":"npm test","build_cmd":"npm run build"},
+  "navi-hq": {"name":"Navi HQ","dir":"/Users/sifatdad/Projects/navi-hq","url":"https://baaz-smaeday.github.io/navi-hq/","tags":["Dashboard"],"quick_actions":["git status"],"dev_cmd":"npx serve .","dev_port":3005,"test_cmd":"echo 'No tests'","build_cmd":"echo 'Static site'"}
 },
   mac_actions: {
   "open chrome": "open -a 'Google Chrome'",
@@ -632,6 +740,7 @@ function renderProjects(){
       ? `<button class="preview-btn live" onclick="event.stopPropagation();openPreviewModal('${slug}')">Live Preview</button>`
       : `<button class="preview-btn" onclick="event.stopPropagation();startPreview('${slug}')">Preview</button>`
     ) : '';
+    const gitBtn = `<button class="git-btn" onclick="event.stopPropagation();openGitModal('${slug}')">Git &amp; Test</button>`;
 
     card.innerHTML=`
       <div class="proj-icon">${initial}</div>
@@ -639,7 +748,7 @@ function renderProjects(){
         <div class="proj-name">${esc(p.name)}</div>
         ${url}
         <div class="proj-tags">${tags}</div>
-        <div class="proj-actions">${actions}${previewBtn}</div>
+        <div class="proj-actions">${actions}${previewBtn}${gitBtn}</div>
       </div>
     `;
     list.appendChild(card);
@@ -962,6 +1071,179 @@ function generateQR(text){
     ctx.fillText('not available', size/2, size/2 + 10);
   };
   img.src = `https://api.qrserver.com/v1/create-qr-code/?size=${size}x${size}&data=${encodeURIComponent(text)}&bgcolor=151515&color=00e676`;
+}
+
+// ═══ GIT & TEST ═══
+let gitModalProject = '';
+
+function openGitModal(slug){
+  gitModalProject = slug;
+  const p = CONFIG.projects[slug];
+  document.getElementById('git-title').textContent = `${p.name} — Git & Test`;
+  document.getElementById('git-modal').classList.add('show');
+  document.getElementById('git-result').innerHTML = '';
+  document.getElementById('branch-list').innerHTML = '';
+  document.getElementById('commit-msg').value = '';
+}
+
+function closeGitModal(){
+  document.getElementById('git-modal').classList.remove('show');
+}
+
+async function runNaviCmd(cmd){
+  if(!gitModalProject){toast('Select a project first',true);return;}
+  const resultEl = document.getElementById('git-result');
+  resultEl.innerHTML = '<div class="preview-status"><div class="preview-spinner"></div>Running...</div>';
+
+  await sendDirect(`__navi_${cmd}::`, gitModalProject, 'shell');
+
+  // Poll for result
+  let attempts = 0;
+  const gitPoll = setInterval(async ()=>{
+    attempts++;
+    try{
+      const r = await fetch(SB_URL+'/rest/v1/commands?order=created_at.desc&limit=1',{headers:SB_HDR});
+      const d = await r.json();
+      if(d.length>0){
+        if(d[0].status==='running' && d[0].result){
+          resultEl.innerHTML = `<div class="diff-view">${esc(d[0].result)}</div>`;
+        }
+        if(d[0].status==='done' || d[0].status==='error'){
+          const raw = d[0].result || 'No output';
+          if(cmd === 'diff' || cmd === 'diff_staged'){
+            resultEl.innerHTML = renderDiff(raw);
+          } else if(cmd === 'branches'){
+            renderBranches(raw);
+            resultEl.innerHTML = `<div class="diff-view">${esc(raw)}</div>`;
+          } else if(cmd === 'test' || cmd === 'build'){
+            const isErr = d[0].status === 'error';
+            resultEl.innerHTML = `<div class="diff-view" style="border-color:${isErr?'var(--danger)':'var(--accent)'}">${esc(raw)}</div>`;
+          } else {
+            resultEl.innerHTML = `<div class="diff-view">${esc(raw)}</div>`;
+          }
+          clearInterval(gitPoll);
+          return;
+        }
+      }
+    }catch(e){}
+    if(attempts > 60){
+      resultEl.innerHTML = '<div class="diff-view" style="color:var(--danger)">Timed out</div>';
+      clearInterval(gitPoll);
+    }
+  }, 2000);
+}
+
+async function runCommit(){
+  if(!gitModalProject){toast('Select a project first',true);return;}
+  const msg = document.getElementById('commit-msg').value.trim();
+  if(!msg){toast('Enter a commit message',true);return;}
+  const resultEl = document.getElementById('git-result');
+  resultEl.innerHTML = '<div class="preview-status"><div class="preview-spinner"></div>Committing...</div>';
+
+  await sendDirect(`__navi_commit::${msg}`, gitModalProject, 'shell');
+
+  let attempts = 0;
+  const commitPoll = setInterval(async ()=>{
+    attempts++;
+    try{
+      const r = await fetch(SB_URL+'/rest/v1/commands?order=created_at.desc&limit=1',{headers:SB_HDR});
+      const d = await r.json();
+      if(d.length>0 && (d[0].status==='done' || d[0].status==='error')){
+        const isErr = d[0].status === 'error';
+        resultEl.innerHTML = `<div class="diff-view" style="border-color:${isErr?'var(--danger)':'var(--accent)'}">${esc(d[0].result||'')}</div>`;
+        if(!isErr) document.getElementById('commit-msg').value = '';
+        clearInterval(commitPoll);
+      }
+    }catch(e){}
+    if(attempts > 30){clearInterval(commitPoll);}
+  }, 2000);
+}
+
+async function runCreatePR(){
+  if(!gitModalProject){toast('Select a project first',true);return;}
+  const msg = document.getElementById('commit-msg').value.trim() || 'Update from Navi HQ';
+  const resultEl = document.getElementById('git-result');
+  resultEl.innerHTML = '<div class="preview-status"><div class="preview-spinner"></div>Creating PR...</div>';
+
+  await sendDirect(`__navi_pr::${msg}`, gitModalProject, 'shell');
+
+  let attempts = 0;
+  const prPoll = setInterval(async ()=>{
+    attempts++;
+    try{
+      const r = await fetch(SB_URL+'/rest/v1/commands?order=created_at.desc&limit=1',{headers:SB_HDR});
+      const d = await r.json();
+      if(d.length>0 && (d[0].status==='done' || d[0].status==='error')){
+        resultEl.innerHTML = `<div class="diff-view">${esc(d[0].result||'')}</div>`;
+        clearInterval(prPoll);
+      }
+    }catch(e){}
+    if(attempts > 30){clearInterval(prPoll);}
+  }, 2000);
+}
+
+function renderDiff(raw){
+  if(!raw) return '<div class="diff-view">No changes</div>';
+  const parts = raw.split('---DIFF---');
+  const stat = parts[0] || '';
+  const diff = parts[1] || '';
+
+  let statHtml = '';
+  if(stat.trim()){
+    statHtml = `<div class="diff-stat">${esc(stat.trim()).replace(/\n/g,'<br>')}</div>`;
+  }
+
+  if(!diff.trim()) return statHtml + '<div class="diff-view">No diff content</div>';
+
+  const lines = esc(diff).split('\n').map(line => {
+    if(line.startsWith('+') && !line.startsWith('+++')) return `<span class="diff-add">${line}</span>`;
+    if(line.startsWith('-') && !line.startsWith('---')) return `<span class="diff-del">${line}</span>`;
+    if(line.startsWith('@@')) return `<span class="diff-hdr">${line}</span>`;
+    if(line.startsWith('diff --git')) return `<span class="diff-file">${line}</span>`;
+    return line;
+  }).join('\n');
+
+  return statHtml + `<div class="diff-view">${lines}</div>`;
+}
+
+function renderBranches(raw){
+  const list = document.getElementById('branch-list');
+  if(!raw){list.innerHTML='';return;}
+  const lines = raw.split('\n').filter(l=>l.trim() && !l.startsWith('Current:'));
+  const current = raw.match(/Current:\s*(.+)/);
+  const currentBranch = current ? current[1].trim() : '';
+
+  list.innerHTML = lines.slice(0, 15).map(line => {
+    const name = line.trim().split(/\s+/)[0];
+    if(!name || name === 'Current:') return '';
+    const isCurrent = name === currentBranch;
+    return `<div class="branch-item${isCurrent?' current':''}" onclick="switchBranch('${esc(name)}')">
+      <span>${esc(name)}</span>
+      ${isCurrent?'<span class="branch-tag">current</span>':''}
+    </div>`;
+  }).join('');
+}
+
+async function switchBranch(branch){
+  if(!gitModalProject) return;
+  const resultEl = document.getElementById('git-result');
+  resultEl.innerHTML = '<div class="preview-status"><div class="preview-spinner"></div>Switching...</div>';
+
+  await sendDirect(`__navi_checkout::${branch}`, gitModalProject, 'shell');
+
+  let attempts = 0;
+  const poll = setInterval(async ()=>{
+    attempts++;
+    try{
+      const r = await fetch(SB_URL+'/rest/v1/commands?order=created_at.desc&limit=1',{headers:SB_HDR});
+      const d = await r.json();
+      if(d.length>0 && (d[0].status==='done' || d[0].status==='error')){
+        resultEl.innerHTML = `<div class="diff-view">${esc(d[0].result||'')}</div>`;
+        clearInterval(poll);
+      }
+    }catch(e){}
+    if(attempts > 15){clearInterval(poll);}
+  }, 2000);
 }
 
 // ═══ HISTORY ═══

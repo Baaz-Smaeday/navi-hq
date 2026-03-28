@@ -725,6 +725,128 @@ route_command() {
     return
   fi
 
+  # TEST & GIT COMMANDS
+  if echo "$cmd" | grep -q "^__navi_"; then
+    local navi_cmd; navi_cmd=$(echo "$cmd" | sed 's/^__navi_//' | cut -d: -f1)
+    local navi_arg; navi_arg=$(echo "$cmd" | sed 's/^[^:]*:://' | sed 's/^[^:]*:://')
+    local proj_dir="$HOME"
+    if [ "$project" != "general" ] && [ -n "$project" ]; then
+      proj_dir=$(get_project_dir "$project")
+      [ -z "$proj_dir" ] || [ ! -d "$proj_dir" ] && proj_dir="$HOME"
+    fi
+
+    case "$navi_cmd" in
+      test)
+        log "Running tests in: $proj_dir"
+        local test_cmd; test_cmd=$(get_project_field "$project" "test_cmd")
+        [ -z "$test_cmd" ] && test_cmd="npm test"
+        stream_result "$id" "Running: $test_cmd"
+        local tmpfile="$SESSION_DIR/test-${id}"
+        (cd "$proj_dir" && bash -c "$test_cmd" > "$tmpfile" 2>&1) &
+        local tpid=$!
+        local telapsed=0
+        while kill -0 "$tpid" 2>/dev/null; do
+          sleep 2; telapsed=$((telapsed + 2))
+          [ -f "$tmpfile" ] && stream_result "$id" "$(tail -c 4000 "$tmpfile" 2>/dev/null)"
+          if [ "$telapsed" -ge 120 ]; then
+            kill "$tpid" 2>/dev/null || true
+            update_status "$id" "error" "Test timed out after 120s\n$(tail -c 3000 "$tmpfile" 2>/dev/null)"
+            rm -f "$tmpfile"; return
+          fi
+        done
+        wait "$tpid" 2>/dev/null; local texit=$?
+        local tresult=""; [ -f "$tmpfile" ] && tresult=$(tail -c 4000 "$tmpfile") && rm -f "$tmpfile"
+        if [ $texit -eq 0 ]; then
+          update_status "$id" "done" "Tests PASSED\n\n$tresult"
+        else
+          update_status "$id" "error" "Tests FAILED (exit $texit)\n\n$tresult"
+        fi
+        ;;
+
+      build)
+        log "Running build in: $proj_dir"
+        local build_cmd; build_cmd=$(get_project_field "$project" "build_cmd")
+        [ -z "$build_cmd" ] && build_cmd="npm run build"
+        local bresult; bresult=$(cd "$proj_dir" && bash -c "$build_cmd" 2>&1 | tail -c 4000)
+        [ $? -eq 0 ] && update_status "$id" "done" "Build PASSED\n\n$bresult" || update_status "$id" "error" "Build FAILED\n\n$bresult"
+        ;;
+
+      diff)
+        log "Git diff in: $proj_dir"
+        local diff_result; diff_result=$(cd "$proj_dir" && git diff --stat 2>&1 && echo "---DIFF---" && git diff 2>&1 | head -c 8000)
+        update_status "$id" "done" "$diff_result"
+        ;;
+
+      diff_staged)
+        log "Git diff staged in: $proj_dir"
+        local sdiff; sdiff=$(cd "$proj_dir" && git diff --cached --stat 2>&1 && echo "---DIFF---" && git diff --cached 2>&1 | head -c 8000)
+        update_status "$id" "done" "$sdiff"
+        ;;
+
+      status)
+        log "Git status in: $proj_dir"
+        local gstatus; gstatus=$(cd "$proj_dir" && git status 2>&1 && echo "" && echo "Branch: $(git branch --show-current 2>/dev/null)" && echo "Last commit: $(git log --oneline -1 2>/dev/null)")
+        update_status "$id" "done" "$gstatus"
+        ;;
+
+      commit)
+        log "Git commit in: $proj_dir"
+        local cmsg="$navi_arg"
+        [ -z "$cmsg" ] && cmsg="Update from Navi HQ"
+        local cresult; cresult=$(cd "$proj_dir" && git add -A && git commit -m "$cmsg" 2>&1)
+        [ $? -eq 0 ] && update_status "$id" "done" "Committed!\n\n$cresult" || update_status "$id" "error" "Commit failed\n\n$cresult"
+        ;;
+
+      push)
+        log "Git push in: $proj_dir"
+        local presult; presult=$(cd "$proj_dir" && git push 2>&1)
+        [ $? -eq 0 ] && update_status "$id" "done" "Pushed!\n\n$presult" || update_status "$id" "error" "Push failed\n\n$presult"
+        ;;
+
+      pr)
+        log "Creating PR in: $proj_dir"
+        local pr_title="$navi_arg"
+        [ -z "$pr_title" ] && pr_title="Update from Navi HQ"
+        local prresult; prresult=$(cd "$proj_dir" && gh pr create --title "$pr_title" --body "Created from Navi HQ mobile dashboard" --fill 2>&1)
+        [ $? -eq 0 ] && update_status "$id" "done" "PR Created!\n\n$prresult" || update_status "$id" "error" "PR failed\n\n$prresult"
+        ;;
+
+      branches)
+        log "Listing branches in: $proj_dir"
+        local blist; blist=$(cd "$proj_dir" && echo "Current: $(git branch --show-current 2>/dev/null)" && echo "" && git branch -a --format='%(refname:short) %(upstream:short) %(committerdate:relative)' 2>&1 | head -30)
+        update_status "$id" "done" "$blist"
+        ;;
+
+      checkout)
+        log "Checkout branch in: $proj_dir"
+        local branch="$navi_arg"
+        if [ -z "$branch" ]; then
+          update_status "$id" "error" "No branch specified"
+        else
+          local coresult; coresult=$(cd "$proj_dir" && git checkout "$branch" 2>&1)
+          [ $? -eq 0 ] && update_status "$id" "done" "Switched to: $branch\n\n$coresult" || update_status "$id" "error" "Checkout failed\n\n$coresult"
+        fi
+        ;;
+
+      revert)
+        log "Reverting last commit in: $proj_dir"
+        local revresult; revresult=$(cd "$proj_dir" && git revert HEAD --no-edit 2>&1)
+        [ $? -eq 0 ] && update_status "$id" "done" "Reverted last commit!\n\n$revresult" || update_status "$id" "error" "Revert failed\n\n$revresult"
+        ;;
+
+      log)
+        log "Git log in: $proj_dir"
+        local glog; glog=$(cd "$proj_dir" && git log --oneline --graph -20 2>&1)
+        update_status "$id" "done" "$glog"
+        ;;
+
+      *)
+        update_status "$id" "error" "Unknown navi command: $navi_cmd"
+        ;;
+    esac
+    return
+  fi
+
   # NEW WARP + CLAUDE (like v1: opens new tab with Claude in project dir)
   if echo "$cmd_lower" | grep -qE "(new claude|start claude|open claude|claude chat|new chat|new warp|open warp)"; then
     local project_dir="$HOME"
