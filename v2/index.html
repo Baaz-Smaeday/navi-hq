@@ -656,9 +656,10 @@ body{
       Starting dev server &amp; tunnel...
     </div>
     <div id="preview-content" style="display:none">
+      <a class="btn btn-primary" id="preview-open-btn" href="#" target="_blank" style="display:block;text-align:center;padding:16px;border-radius:12px;background:var(--accent);color:#000;font-weight:800;font-size:15px;text-decoration:none;margin-bottom:12px">Open Preview in Browser</a>
       <div class="preview-url-bar">
         <div class="preview-url" id="preview-url">—</div>
-        <button class="preview-open" onclick="window.open(document.getElementById('preview-url').textContent,'_blank')">Open</button>
+        <button class="preview-open" onclick="navigator.clipboard.writeText(document.getElementById('preview-url').textContent);toast('URL copied!')">Copy</button>
       </div>
       <iframe class="preview-frame" id="preview-iframe" sandbox="allow-scripts allow-same-origin allow-forms" loading="lazy"></iframe>
       <div class="preview-qr" id="preview-qr">
@@ -1410,7 +1411,16 @@ function showPreviewUI(slug, url){
   document.getElementById('preview-loading').style.display = 'none';
   document.getElementById('preview-content').style.display = 'block';
   document.getElementById('preview-url').textContent = url;
-  document.getElementById('preview-iframe').src = url;
+  document.getElementById('preview-open-btn').href = url;
+  // Hide iframe on iOS Safari (cross-origin blocked)
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+  const iframe = document.getElementById('preview-iframe');
+  if(isIOS){
+    iframe.style.display = 'none';
+  } else {
+    iframe.style.display = 'block';
+    iframe.src = url;
+  }
   generateQR(url);
 }
 
