@@ -1142,22 +1142,22 @@ function quickAction(project, action){
 
 // ═══ QUICK ACTION GRIDS ═══
 function li(name){return `<i data-lucide="${name}"></i>`;}
-// Brand SVG icons (real logos)
+// Brand icons — Simple Icons CDN (reliable, all tech brands) + custom SVGs
+function siImg(slug){return `<img src="https://cdn.simpleicons.org/${slug}/white" style="width:26px;height:26px" onerror="this.style.display='none'" />`;}
 const BRAND={
-chrome:`<svg viewBox="0 0 24 24" width="26" height="26"><circle cx="12" cy="12" r="4.5" fill="#fff"/><path d="M12 7.5A4.5 4.5 0 0 1 16.5 12h5.25A9.75 9.75 0 0 0 7.19 4.15l2.56 4.43A4.48 4.48 0 0 1 12 7.5z" fill="#DB4437"/><path d="M16.5 12a4.5 4.5 0 0 1-2.25 3.9l-2.62 4.55A9.75 9.75 0 0 0 21.75 12H16.5z" fill="#4285F4"/><path d="M9.75 15.9A4.5 4.5 0 0 1 7.5 12a4.48 4.48 0 0 1 .69-2.4L5.62 5.17A9.73 9.73 0 0 0 11.63 20.45l2.62-4.55a4.48 4.48 0 0 1-4.5 0z" fill="#0F9D58"/><path d="M7.5 12a4.48 4.48 0 0 1 .69-2.4l-2.56-4.43A9.72 9.72 0 0 0 2.25 12a9.73 9.73 0 0 0 3.37 7.38l2.57-4.47A4.5 4.5 0 0 1 7.5 12z" fill="#F4B400"/></svg>`,
-safari:`<svg viewBox="0 0 24 24" width="26" height="26"><circle cx="12" cy="12" r="10" fill="none" stroke="#fff" stroke-width="1.5"/><polygon points="12,3 14,10 12,12 10,14 12,21 10,14 12,12 14,10" fill="#fff" opacity="0.9"/><polygon points="12,3 14,10 12,12" fill="#ff3b30"/><polygon points="12,12 10,14 12,21" fill="#ff3b30"/></svg>`,
-warp:`<svg viewBox="0 0 24 24" width="24" height="24"><path d="M4 4h16v16H4z" rx="3" fill="none" stroke="#fff" stroke-width="1.5"/><path d="M8 8l4 4-4 4" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><line x1="14" y1="16" x2="18" y2="16" stroke="#fff" stroke-width="2" stroke-linecap="round"/></svg>`,
-vscode:`<svg viewBox="0 0 24 24" width="24" height="24"><path d="M17.5 2L8.3 10.6 3.8 7.2 2 8.1v7.8l1.8.9 4.5-3.4L17.5 22l4.5-2.2V4.2L17.5 2zm0 4.3v11.4L9.1 12 17.5 6.3z" fill="#fff"/></svg>`,
-claude:`<svg viewBox="0 0 24 24" width="24" height="24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z" fill="none" stroke="#fff" stroke-width="1.5"/><path d="M12 6c-2.5 0-4.5 1.5-4.5 4 0 1.5.8 2.8 2 3.5L9 17h6l-.5-3.5c1.2-.7 2-2 2-3.5 0-2.5-2-4-4.5-4z" fill="#fff"/></svg>`,
-chatgpt:`<svg viewBox="0 0 24 24" width="22" height="22"><path d="M22.28 14.57a5.24 5.24 0 0 0-.46-4.32 5.3 5.3 0 0 0-5.71-2.54A5.27 5.27 0 0 0 12.15 6a5.28 5.28 0 0 0-5.02 3.64 5.25 5.25 0 0 0-3.5 2.55 5.3 5.3 0 0 0 .67 6.21A5.24 5.24 0 0 0 4.76 22.72a5.3 5.3 0 0 0 5.71 2.54A5.27 5.27 0 0 0 14.43 27a5.28 5.28 0 0 0 5.02-3.64 5.25 5.25 0 0 0 3.5-2.55 5.27 5.27 0 0 0-.67-6.24z" fill="#fff" transform="translate(-1.5,-4.5) scale(0.82)"/></svg>`,
-gemini:`<svg viewBox="0 0 24 24" width="24" height="24"><path d="M12 2L9 9 2 12l7 3 3 7 3-7 7-3-7-3-3-7z" fill="#fff"/></svg>`,
-cursor:`<svg viewBox="0 0 24 24" width="22" height="22"><path d="M5 3l14 9-6 2-3 7-5-18z" fill="#fff"/></svg>`,
-copilot:`<svg viewBox="0 0 24 24" width="22" height="22"><path d="M12 2C6.48 2 2 6.48 2 12c0 4.42 2.87 8.17 6.84 9.49.5.09.66-.22.66-.48v-1.7c-2.78.6-3.37-1.34-3.37-1.34-.46-1.16-1.11-1.47-1.11-1.47-.91-.62.07-.61.07-.61 1 .07 1.53 1.03 1.53 1.03.89 1.52 2.34 1.08 2.91.83.09-.65.35-1.09.63-1.34-2.22-.25-4.55-1.11-4.55-4.94 0-1.09.39-1.98 1.03-2.68-.1-.25-.45-1.27.1-2.64 0 0 .84-.27 2.75 1.02A9.56 9.56 0 0 1 12 6.8c.85 0 1.7.11 2.5.33 1.91-1.29 2.75-1.02 2.75-1.02.55 1.37.2 2.39.1 2.64.64.7 1.03 1.59 1.03 2.68 0 3.84-2.34 4.68-4.57 4.93.36.31.68.92.68 1.85v2.75c0 .27.16.58.67.48A10 10 0 0 0 22 12c0-5.52-4.48-10-10-10z" fill="#fff"/></svg>`,
-finder:`<svg viewBox="0 0 24 24" width="24" height="24"><rect x="3" y="2" width="18" height="20" rx="3" fill="none" stroke="#fff" stroke-width="1.5"/><circle cx="9" cy="9" r="1.5" fill="#fff"/><circle cx="15" cy="9" r="1.5" fill="#fff"/><path d="M8 15c1 2 7 2 8 0" fill="none" stroke="#fff" stroke-width="1.5" stroke-linecap="round"/></svg>`,
-lock:`<svg viewBox="0 0 24 24" width="22" height="22"><rect x="5" y="11" width="14" height="10" rx="2" fill="none" stroke="#fff" stroke-width="1.5"/><path d="M8 11V7a4 4 0 0 1 8 0v4" fill="none" stroke="#fff" stroke-width="1.5"/><circle cx="12" cy="16" r="1.5" fill="#fff"/></svg>`,
-camera:`<svg viewBox="0 0 24 24" width="22" height="22"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" fill="none" stroke="#fff" stroke-width="1.5"/><circle cx="12" cy="13" r="4" fill="none" stroke="#fff" stroke-width="1.5"/></svg>`,
-aider:`<svg viewBox="0 0 24 24" width="22" height="22"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" fill="none" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
-claudeweb:`<svg viewBox="0 0 24 24" width="22" height="22"><circle cx="12" cy="12" r="9" fill="none" stroke="#fff" stroke-width="1.5"/><path d="M12 6c-2 0-3.5 1.2-3.5 3.2 0 1.2.6 2.2 1.6 2.8L9.8 15h4.4l-.3-3c1-.6 1.6-1.6 1.6-2.8C15.5 7.2 14 6 12 6z" fill="#fff"/></svg>`,
+chrome: siImg('googlechrome'),
+safari: siImg('safari'),
+warp:`<svg viewBox="0 0 24 24" width="26" height="26"><path d="M8 8l4 4-4 4" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/><line x1="14" y1="16" x2="19" y2="16" stroke="#fff" stroke-width="2.5" stroke-linecap="round"/></svg>`,
+vscode: siImg('visualstudiocode'),
+claude: siImg('anthropic'),
+chatgpt: siImg('openai'),
+gemini: siImg('googlegemini'),
+cursor: siImg('cursor'),
+copilot: siImg('githubcopilot'),
+finder:`<svg viewBox="0 0 24 24" width="26" height="26"><rect x="3" y="1" width="18" height="22" rx="4" fill="none" stroke="#fff" stroke-width="1.5"/><circle cx="9" cy="9" r="1.8" fill="#fff"/><circle cx="15" cy="9" r="1.8" fill="#fff"/><path d="M8.5 15c1.2 2.5 5.8 2.5 7 0" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round"/><line x1="12" y1="9" x2="12" y2="13" stroke="#fff" stroke-width="1.5"/></svg>`,
+lock:`<svg viewBox="0 0 24 24" width="24" height="24"><rect x="5" y="11" width="14" height="10" rx="2.5" fill="#fff" opacity="0.9"/><path d="M8 11V7a4 4 0 0 1 8 0v4" fill="none" stroke="#fff" stroke-width="2"/><circle cx="12" cy="16" r="1.5" fill="#ee5a24"/></svg>`,
+camera:`<svg viewBox="0 0 24 24" width="24" height="24"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" fill="#fff" opacity="0.15" stroke="#fff" stroke-width="1.5"/><circle cx="12" cy="13" r="4" fill="none" stroke="#fff" stroke-width="2"/><circle cx="12" cy="13" r="1.5" fill="#fff"/></svg>`,
+claudeweb: siImg('anthropic'),
 };
 
 function renderMacActions(){
