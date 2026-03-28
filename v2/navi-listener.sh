@@ -714,8 +714,8 @@ route_command() {
 
   # PREVIEW COMMANDS
   if echo "$cmd" | grep -q "^__navi_preview::"; then
-    local preview_action; preview_action=$(echo "$cmd" | cut -d: -f4)
-    local preview_project; preview_project=$(echo "$cmd" | cut -d: -f5)
+    local preview_action; preview_action=$(echo "$cmd" | sed 's/__navi_preview:://' | cut -d: -f1)
+    local preview_project; preview_project=$(echo "$cmd" | sed 's/__navi_preview:://' | sed 's/^[^:]*:://')
     case "$preview_action" in
       start) start_preview "$id" "$preview_project" ;;
       stop)  stop_preview "$id" "$preview_project" ;;
