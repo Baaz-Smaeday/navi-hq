@@ -116,12 +116,73 @@ heartbeat() {
 # WARP TAB MANAGEMENT
 # ═══════════════════════════════════════════
 
+TAB_REGISTRY="/tmp/navi-warp-tabs.json"
+
+# Initialize tab registry if it doesn't exist
+init_tab_registry() {
+  if [ ! -f "$TAB_REGISTRY" ]; then
+    echo '{"tabs":{},"next_index":1}' > "$TAB_REGISTRY"
+  fi
+}
+
+# Get the tab index for a project (returns empty if not registered)
+get_tab_index() {
+  local project="$1"
+  python3 -c "
+import json
+try:
+    r=json.load(open('$TAB_REGISTRY'))
+    idx=r.get('tabs',{}).get('$project',{}).get('index','')
+    print(idx)
+except: print('')
+" 2>/dev/null
+}
+
+# Register a new tab for a project
+register_tab() {
+  local project="$1"
+  python3 -c "
+import json
+r=json.load(open('$TAB_REGISTRY'))
+idx=r.get('next_index',1)
+r['tabs']['$project']={'index':idx}
+r['next_index']=idx+1
+json.dump(r,open('$TAB_REGISTRY','w'),indent=2)
+print(idx)
+" 2>/dev/null
+}
+
+# Reset tab registry (when Warp restarts or tabs get out of sync)
+reset_tab_registry() {
+  echo '{"tabs":{},"next_index":1}' > "$TAB_REGISTRY"
+  log "Tab registry reset"
+}
+
+# Count Warp tabs via AppleScript
+count_warp_tabs() {
+  osascript -e '
+    tell application "System Events"
+      tell process "Warp"
+        count of windows
+      end tell
+    end tell
+  ' 2>/dev/null || echo "0"
+}
+
 # Open a new Warp tab, cd to project, start Claude with auto-permissions
+# Returns and registers the new tab index
 open_warp_claude() {
   local project_dir="$1"
   local project_name="${2:-general}"
 
+  init_tab_registry
+
   log "Opening new Warp tab with Claude for: $project_name ($project_dir)"
+
+  # Register this tab
+  local tab_idx
+  tab_idx=$(register_tab "$project_name")
+  log "Registered as tab $tab_idx"
 
   # Build the command to run in the new tab
   local warp_cmd
@@ -156,24 +217,72 @@ open_warp_claude() {
 APPLESCRIPT
 }
 
-# Type into an existing Warp Claude session (switch to last tab + paste)
-type_into_warp() {
-  local msg="$1"
-  echo -n "$msg" | pbcopy
+# Open a new Warp tab AND type a message into it after Claude starts
+open_warp_claude_with_msg() {
+  local project_dir="$1"
+  local project_name="${2:-general}"
+  local msg="$3"
 
+  # Open the tab first
+  open_warp_claude "$project_dir" "$project_name"
+
+  # Wait for Claude to be fully ready then type the message
+  sleep 3
+  echo -n "$msg" | pbcopy
   osascript -e '
-    tell application "Warp" to activate
-    delay 0.3
     tell application "System Events"
       tell process "Warp"
-        keystroke "9" using command down
-        delay 0.5
         keystroke "v" using command down
         delay 0.2
         key code 36
       end tell
     end tell
   '
+}
+
+# Switch to a specific Warp tab by index and type a message
+type_into_warp_tab() {
+  local tab_idx="$1"
+  local msg="$2"
+
+  echo -n "$msg" | pbcopy
+
+  # Cmd+1 through Cmd+9 to switch tabs
+  osascript -e "
+    tell application \"Warp\" to activate
+    delay 0.3
+    tell application \"System Events\"
+      tell process \"Warp\"
+        keystroke \"$tab_idx\" using command down
+        delay 0.5
+        keystroke \"v\" using command down
+        delay 0.2
+        key code 36
+      end tell
+    end tell
+  "
+}
+
+# Smart: type into the right project tab, or open a new one
+smart_warp_route() {
+  local project="$1"
+  local project_dir="$2"
+  local msg="$3"
+
+  init_tab_registry
+
+  local tab_idx
+  tab_idx=$(get_tab_index "$project")
+
+  if [ -n "$tab_idx" ]; then
+    # Project already has a tab — switch to it and type
+    log "Project '$project' → existing tab $tab_idx"
+    type_into_warp_tab "$tab_idx" "$msg"
+  else
+    # No tab for this project — open new one and type message
+    log "Project '$project' → opening new tab"
+    open_warp_claude_with_msg "$project_dir" "$project" "$msg"
+  fi
 }
 
 # ═══════════════════════════════════════════
@@ -472,15 +581,13 @@ route_command() {
   case "${tool:-$DEFAULT_TOOL}" in
     claude-code)
       # SMART ROUTING:
-      # - Project selected → type into existing Warp session (saves tokens, keeps conversation)
-      #   If no Warp session exists, open one first then type
+      # - Project selected → find or open Warp tab for that project, type into it
+      #   (saves tokens, keeps conversation, visual on laptop)
       # - No project ("general") → silent claude -p, result to phone (quick one-shot)
       if [ "$project" != "general" ] && [ -n "$project" ]; then
-        log "Smart route: project '$project' → typing into Warp session"
-        # Type the command into the last Warp Claude tab
-        # (user should have a session open for this project)
-        type_into_warp "$cmd"
-        update_status "$id" "done" "Typed into Warp Claude session: $cmd — check laptop screen"
+        log "Smart route: project '$project' → Warp tab"
+        smart_warp_route "$project" "$project_dir" "$cmd"
+        update_status "$id" "done" "Sent to Claude in $project — check laptop screen"
       else
         run_claude_code "$id" "$cmd" "$project_dir"
       fi
@@ -506,8 +613,12 @@ route_command() {
 # MAIN LOOP
 # ═══════════════════════════════════════════
 
+# Reset tab registry on startup (clean slate)
+init_tab_registry
+reset_tab_registry
+
 echo "╔═══════════════════════════════════════════╗"
-echo "║         NAVI HQ v2.1 — Listener           ║"
+echo "║         NAVI HQ v2.2 — Listener           ║"
 echo "║  ID: $LISTENER_ID"
 echo "║  Config: $CONFIG_FILE"
 echo "║  Tools: claude-code, warp, cursor, copilot,"
