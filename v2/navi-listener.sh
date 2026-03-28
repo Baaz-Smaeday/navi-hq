@@ -1086,32 +1086,15 @@ route_command() {
     return
   fi
 
-  # TYPE INTO EXISTING WARP SESSION (project-aware)
+  # TYPE / SEND PREFIX — run as claude -p, result to phone
   if echo "$cmd_lower" | grep -qE "^(>|type:|type |send:|send )"; then
     local msg; msg=$(echo "$cmd" | sed -E 's/^(>|type:|type |send:|send )[[:space:]]*//')
+    local proj_dir="$HOME"
     if [ "$project" != "general" ] && [ -n "$project" ]; then
-      local project_dir; project_dir=$(get_project_dir "$project")
-      [ -z "$project_dir" ] || [ ! -d "$project_dir" ] && project_dir="$HOME"
-      smart_warp_route "$project" "$project_dir" "$msg"
-      update_status "$id" "done" "Sent to Claude in $project: $msg"
-    else
-      # No project — type into last active Warp tab
-      echo -n "$msg" | pbcopy
-      gui_osascript -e '
-        tell application "Warp" to activate
-        delay 0.3
-        tell application "System Events"
-          tell process "Warp"
-            keystroke "9" using command down
-            delay 0.5
-            keystroke "v" using command down
-            delay 0.2
-            key code 36
-          end tell
-        end tell
-      '
-      update_status "$id" "done" "Typed into last Warp tab: $msg"
+      proj_dir=$(get_project_dir "$project")
+      [ -z "$proj_dir" ] || [ ! -d "$proj_dir" ] && proj_dir="$HOME"
     fi
+    run_claude_code "$id" "$msg" "$proj_dir"
     return
   fi
 
@@ -1172,16 +1155,9 @@ route_command() {
 
   case "${tool:-$DEFAULT_TOOL}" in
     claude-code)
-      # SMART ROUTING:
-      # - Project selected → find or open Warp tab, type into Claude (visual on laptop)
-      # - No project ("general") → silent claude -p, result streams to phone
-      if [ "$project" != "general" ] && [ -n "$project" ]; then
-        log "Smart route: project '$project' → Warp tab"
-        smart_warp_route "$project" "$project_dir" "$cmd"
-        update_status "$id" "done" "Sent to Claude in $project — check laptop screen"
-      else
-        run_claude_code "$id" "$cmd" "$project_dir"
-      fi
+      # Always run claude -p silently — result streams back to phone
+      # This works reliably from background LaunchAgent
+      run_claude_code "$id" "$cmd" "$project_dir"
       ;;
     warp)
       # Open a NEW Warp tab with Claude in the project dir
