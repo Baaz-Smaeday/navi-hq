@@ -840,6 +840,105 @@ route_command() {
         update_status "$id" "done" "$glog"
         ;;
 
+      # ── FILE BROWSER ──
+      ls)
+        local target_path="$navi_arg"
+        [ -z "$target_path" ] && target_path="$proj_dir"
+        # Block dangerous paths
+        if echo "$target_path" | grep -qE "(node_modules|\.git/|\.env)"; then
+          update_status "$id" "error" "Blocked: cannot browse $target_path"
+        else
+          local listing; listing=$(ls -la "$target_path" 2>&1 | head -50)
+          update_status "$id" "done" "Directory: $target_path\n\n$listing"
+        fi
+        ;;
+
+      tree)
+        local target_path="$navi_arg"
+        [ -z "$target_path" ] && target_path="$proj_dir"
+        local treeout; treeout=$(find "$target_path" -maxdepth 3 -not -path '*/node_modules/*' -not -path '*/.git/*' -not -path '*/.next/*' 2>/dev/null | head -80 | sed "s|$target_path/||" | sort)
+        update_status "$id" "done" "Tree: $target_path\n\n$treeout"
+        ;;
+
+      cat)
+        local filepath="$navi_arg"
+        if [ -z "$filepath" ]; then
+          update_status "$id" "error" "No file path specified"
+        elif echo "$filepath" | grep -qE "(\.env|credentials|secret|\.key$)"; then
+          update_status "$id" "error" "Blocked: cannot read sensitive file"
+        elif [ ! -f "$filepath" ]; then
+          update_status "$id" "error" "File not found: $filepath"
+        else
+          local fsize; fsize=$(wc -c < "$filepath" 2>/dev/null || echo 0)
+          if [ "$fsize" -gt 50000 ]; then
+            update_status "$id" "error" "File too large (${fsize} bytes). Max 50KB."
+          else
+            local content; content=$(cat "$filepath" 2>&1)
+            local ext; ext=$(echo "$filepath" | sed 's/.*\.//')
+            update_status "$id" "done" "File: $filepath ($ext, ${fsize}b)\n\n$content"
+          fi
+        fi
+        ;;
+
+      search)
+        log "Searching in: $proj_dir"
+        local pattern="$navi_arg"
+        if [ -z "$pattern" ]; then
+          update_status "$id" "error" "No search pattern"
+        else
+          local sresult; sresult=$(cd "$proj_dir" && grep -rn --include='*.{js,ts,tsx,jsx,py,json,css,html}' "$pattern" . 2>/dev/null | head -30 | sed "s|^\./||")
+          [ -z "$sresult" ] && sresult="No matches found"
+          update_status "$id" "done" "Search: $pattern\n\n$sresult"
+        fi
+        ;;
+
+      # ── DEPLOY ──
+      deploy)
+        log "Deploying: $project"
+        local deploy_cmd; deploy_cmd=$(get_project_field "$project" "deploy_cmd")
+        [ -z "$deploy_cmd" ] && deploy_cmd="vercel --prod"
+        stream_result "$id" "Deploying $project...\nRunning: $deploy_cmd"
+        local tmpfile="$SESSION_DIR/deploy-${id}"
+        (cd "$proj_dir" && bash -c "$deploy_cmd" > "$tmpfile" 2>&1) &
+        local dpid=$!
+        local delapsed=0
+        while kill -0 "$dpid" 2>/dev/null; do
+          sleep 3; delapsed=$((delapsed + 3))
+          [ -f "$tmpfile" ] && stream_result "$id" "$(tail -c 4000 "$tmpfile" 2>/dev/null)"
+          if [ "$delapsed" -ge 180 ]; then
+            kill "$dpid" 2>/dev/null || true
+            update_status "$id" "error" "Deploy timed out\n$(tail -c 3000 "$tmpfile" 2>/dev/null)"
+            rm -f "$tmpfile"; return
+          fi
+        done
+        wait "$dpid" 2>/dev/null; local dexit=$?
+        local dresult=""; [ -f "$tmpfile" ] && dresult=$(tail -c 4000 "$tmpfile") && rm -f "$tmpfile"
+        [ $dexit -eq 0 ] && update_status "$id" "done" "Deploy SUCCESS\n\n$dresult" || update_status "$id" "error" "Deploy FAILED\n\n$dresult"
+        ;;
+
+      logs)
+        log "Fetching logs for: $project"
+        local log_cmd; log_cmd=$(get_project_field "$project" "log_cmd")
+        [ -z "$log_cmd" ] && log_cmd="echo 'No log command configured'"
+        local tmpfile="$SESSION_DIR/logs-${id}"
+        (cd "$proj_dir" && bash -c "$log_cmd" > "$tmpfile" 2>&1) &
+        local lpid=$!
+        local lelapsed=0
+        while kill -0 "$lpid" 2>/dev/null; do
+          sleep 2; lelapsed=$((lelapsed + 2))
+          [ -f "$tmpfile" ] && stream_result "$id" "$(tail -c 4000 "$tmpfile" 2>/dev/null)"
+          if [ "$lelapsed" -ge 30 ]; then
+            kill "$lpid" 2>/dev/null || true
+            local lresult=""; [ -f "$tmpfile" ] && lresult=$(tail -c 4000 "$tmpfile") && rm -f "$tmpfile"
+            update_status "$id" "done" "$lresult"
+            return
+          fi
+        done
+        wait "$lpid" 2>/dev/null
+        local lresult=""; [ -f "$tmpfile" ] && lresult=$(tail -c 4000 "$tmpfile") && rm -f "$tmpfile"
+        update_status "$id" "done" "$lresult"
+        ;;
+
       *)
         update_status "$id" "error" "Unknown navi command: $navi_cmd"
         ;;
