@@ -238,18 +238,22 @@ start_preview() {
 
   stream_result "$id" "Dev server running on port $dev_port. Starting tunnel..."
 
-  # Start tunnel
+  # Start tunnel (prefer cloudflared, fallback to localtunnel)
   local tunnel_log="$SESSION_DIR/preview-tunnel-${project}.log"
-  npx localtunnel --port "$dev_port" > "$tunnel_log" 2>&1 &
+  if command -v cloudflared &>/dev/null; then
+    cloudflared tunnel --url "http://localhost:$dev_port" > "$tunnel_log" 2>&1 &
+  else
+    npx localtunnel --port "$dev_port" > "$tunnel_log" 2>&1 &
+  fi
   local tunnel_pid=$!
   log "Tunnel PID: $tunnel_pid"
 
-  # Wait for tunnel URL (max 15s)
+  # Wait for tunnel URL (max 20s)
   local tunnel_url="" t_elapsed=0
   while [ -z "$tunnel_url" ]; do
     sleep 2; t_elapsed=$((t_elapsed + 2))
     if [ -f "$tunnel_log" ]; then
-      tunnel_url=$(grep -o 'https://[^ ]*' "$tunnel_log" 2>/dev/null | head -1)
+      tunnel_url=$(grep -oE 'https://[a-zA-Z0-9._-]+\.(trycloudflare\.com|loca\.lt)' "$tunnel_log" 2>/dev/null | head -1)
     fi
     if ! kill -0 "$tunnel_pid" 2>/dev/null; then
       local t_err=""; [ -f "$tunnel_log" ] && t_err=$(cat "$tunnel_log")
@@ -258,7 +262,7 @@ start_preview() {
       remove_preview "$project"
       return
     fi
-    if [ "$t_elapsed" -ge 15 ]; then
+    if [ "$t_elapsed" -ge 20 ]; then
       update_status "$id" "error" "Tunnel timed out. Check network connection."
       kill "$dev_pid" 2>/dev/null || true
       kill "$tunnel_pid" 2>/dev/null || true
