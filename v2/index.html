@@ -665,6 +665,21 @@ body{
 
       <div class="sec">AI Quick Launch</div>
       <div class="mac-grid" id="ai-grid"></div>
+
+      <div class="sec">Power Tools</div>
+      <div class="mac-grid">
+        <div class="mac-btn" onclick="runPowerCmd('screenshot')"><div class="mac-ico">&#128247;</div><div class="mac-lbl">Screenshot</div></div>
+        <div class="mac-btn" onclick="runPowerCmd('clipboard_get')"><div class="mac-ico">&#128203;</div><div class="mac-lbl">Get Clipboard</div></div>
+        <div class="mac-btn" onclick="promptClipboardSet()"><div class="mac-ico">&#128221;</div><div class="mac-lbl">Set Clipboard</div></div>
+        <div class="mac-btn" onclick="runPowerCmd('sysinfo')"><div class="mac-ico">&#128187;</div><div class="mac-lbl">System Info</div></div>
+      </div>
+
+      <div class="sec">Pipeline</div>
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:14px;margin-bottom:12px">
+        <div style="font-size:10px;color:var(--dim);margin-bottom:8px">Chain commands with &amp;&amp; — stops on first failure</div>
+        <input class="commit-input" id="pipeline-input" type="text" placeholder="git pull && npm install && npm test" style="margin:0 0 8px" />
+        <button class="cmd-send" onclick="runPipeline()" style="width:100%;border-radius:var(--radius-sm)">Run Pipeline</button>
+      </div>
     </div>
 
     <!-- ═══ TAB: TERMINAL ═══ -->
@@ -1650,6 +1665,51 @@ function initRealtime(){
     // Poll every 1.5s instead of 2s for snappier feel
     // (Full Realtime subscription will be added when supabase-js CDN is included)
   }catch(e){console.log('Realtime init error',e);}
+}
+
+// ═══ POWER TOOLS ═══
+async function runPowerCmd(cmd){
+  const proj=document.getElementById('sel-project').value;
+  await sendDirect('__navi_'+cmd+'::',proj,'shell');
+  switchTab('dashboard');
+  showResult('Running '+cmd+'...',null,true);
+  startPolling();
+  // Special handling for screenshot
+  if(cmd==='screenshot'){
+    setTimeout(async()=>{
+      try{
+        const r=await fetch(SB_URL+'/rest/v1/commands?order=created_at.desc&limit=1',{headers:SB_HDR});
+        const d=await r.json();
+        if(d[0]&&d[0].result&&d[0].result.startsWith('SCREENSHOT_B64::')){
+          const b64=d[0].result.replace('SCREENSHOT_B64::','');
+          document.getElementById('result-body').innerHTML=`<img src="data:image/png;base64,${b64}" style="width:100%;border-radius:8px" />`;
+          document.getElementById('result-panel').classList.add('show');
+          document.getElementById('result-title').textContent='Screenshot';
+          polling=false;
+        }
+      }catch(e){}
+    },5000);
+  }
+}
+
+function promptClipboardSet(){
+  const text=prompt('Text to copy to laptop clipboard:');
+  if(text){
+    const proj=document.getElementById('sel-project').value;
+    sendDirect('__navi_clipboard_set::'+text,proj,'shell');
+    toast('Clipboard set!');
+  }
+}
+
+async function runPipeline(){
+  const input=document.getElementById('pipeline-input');
+  const cmd=input.value.trim();
+  if(!cmd){toast('Enter pipeline commands',true);return;}
+  const proj=document.getElementById('sel-project').value;
+  await sendDirect('__navi_pipeline::'+cmd,proj,'shell');
+  switchTab('dashboard');
+  showResult('Running pipeline...',null,true);
+  startPolling();
 }
 
 // ═══ TAB SWITCHING ═══

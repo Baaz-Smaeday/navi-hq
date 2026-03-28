@@ -916,6 +916,62 @@ route_command() {
         [ $dexit -eq 0 ] && update_status "$id" "done" "Deploy SUCCESS\n\n$dresult" || update_status "$id" "error" "Deploy FAILED\n\n$dresult"
         ;;
 
+      # ── SCREENSHOT ──
+      screenshot)
+        log "Taking screenshot"
+        local ssfile="/tmp/navi-screenshot-$(date +%s).png"
+        screencapture -x "$ssfile" 2>/dev/null
+        if [ -f "$ssfile" ]; then
+          local ssb64; ssb64=$(base64 < "$ssfile" | tr -d '\n' | head -c 100000)
+          local sssize; sssize=$(wc -c < "$ssfile")
+          rm -f "$ssfile"
+          update_status "$id" "done" "SCREENSHOT_B64::$ssb64"
+        else
+          update_status "$id" "error" "Screenshot failed"
+        fi
+        ;;
+
+      # ── CLIPBOARD ──
+      clipboard_get)
+        log "Getting clipboard"
+        local clip; clip=$(pbpaste 2>/dev/null | head -c 4000)
+        update_status "$id" "done" "Clipboard:\n\n$clip"
+        ;;
+
+      clipboard_set)
+        log "Setting clipboard"
+        echo -n "$navi_arg" | pbcopy 2>/dev/null
+        update_status "$id" "done" "Clipboard set to: ${navi_arg:0:100}"
+        ;;
+
+      # ── PIPELINE ──
+      pipeline)
+        log "Running pipeline in: $proj_dir"
+        local steps; IFS='&&' read -ra steps <<< "$navi_arg"
+        local step_num=0 total=${#steps[@]}
+        local all_output=""
+        for step in "${steps[@]}"; do
+          step=$(echo "$step" | xargs) # trim
+          step_num=$((step_num + 1))
+          stream_result "$id" "Step $step_num/$total: $step\n$all_output"
+          local sout; sout=$(cd "$proj_dir" && bash -c "$step" 2>&1 | tail -c 2000)
+          local sexit=$?
+          all_output="${all_output}\n--- Step $step_num: $step ---\n$sout\n"
+          if [ $sexit -ne 0 ]; then
+            update_status "$id" "error" "Pipeline FAILED at step $step_num/$total: $step\n$all_output"
+            return
+          fi
+        done
+        update_status "$id" "done" "Pipeline COMPLETE ($total steps)\n$all_output"
+        ;;
+
+      # ── SYSTEM INFO ──
+      sysinfo)
+        log "System info"
+        local info="Hostname: $(hostname)\nUptime: $(uptime)\nDisk: $(df -h / | tail -1)\nMemory: $(vm_stat | head -5)\nBattery: $(pmset -g batt | tail -1)"
+        update_status "$id" "done" "$info"
+        ;;
+
       logs)
         log "Fetching logs for: $project"
         local log_cmd; log_cmd=$(get_project_field "$project" "log_cmd")
